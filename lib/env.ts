@@ -43,7 +43,7 @@ const envSchema = z.object({
   
   // 应用配置
   NODE_ENV: z.enum(['development', 'production', 'test'], "NODE_ENV 必须是 development, production 或 test").optional().default('development'),
-  PORT: z.string().regex(/^[0-9]+$/, "PORT 必须是数字").optional().default('3000'),
+  PORT: z.string().regex(/^[0-9]+$/, "PORT 必须是数字").default('3000'),
   
   // 可选：Redis 配置
   REDIS_HOST: z.string().optional(),

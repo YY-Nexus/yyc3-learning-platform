@@ -11,6 +11,7 @@ import { BarChart3, BookOpen, Loader2, Maximize2, MessageSquare, Minimize2, Minu
 import * as React from 'react';
 import { CSSProperties, useCallback, useEffect, useRef, useState } from 'react';
 import { AgentContext, AgenticCore, UserInput } from '../../packages/autonomous-engine/src/core/AgenticCore';
+import { logger } from '@/lib/logger';
 
 // ==================== 类型定义 ====================
 

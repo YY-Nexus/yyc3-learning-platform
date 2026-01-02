@@ -60,6 +60,7 @@ export interface User {
   enrolledCourses: any[] // CourseProgress[]
   achievements: Achievement[]
   preferences: UserPreferences
+  progress: Record<string, CourseProgress>
 }
 
 export interface UserProfile {
@@ -113,6 +114,8 @@ export interface UserPreferences {
     time: string
     days: string[]
   }
+  notifications: boolean
+  emailUpdates: boolean
 }
 
 // 考试相关类型

@@ -11,7 +11,7 @@
 
 'use client';
 
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useCallback } from 'react';
 import { usePathname } from 'next/navigation';
 
 interface PerformanceMetric {
@@ -40,7 +40,7 @@ export const PerformanceMonitor: React.FC<PerformanceMonitorProps> = ({
   const metricsReported = useRef<Set<string>>(new Set());
 
   // 上报指标
-  const reportMetric = (name: string, value: number) => {
+  const reportMetric = useCallback((name: string, value: number) => {
     if (!enabled || !isSampled.current) return;
     if (metricsReported.current.has(name)) return;
 
@@ -60,7 +60,7 @@ export const PerformanceMonitor: React.FC<PerformanceMonitorProps> = ({
 
     // 发送到监控服务
     sendToMonitoringService(metric);
-  };
+  }, [enabled, pathname, onMetricReport]);
 
   // 发送指标到监控服务
   const sendToMonitoringService = async (metric: PerformanceMetric) => {
@@ -158,7 +158,7 @@ export const PerformanceMonitor: React.FC<PerformanceMonitorProps> = ({
     resourceObserver.observe({ entryTypes: ['resource'] });
 
     return () => resourceObserver.disconnect();
-  }, [enabled, pathname]);
+  }, [enabled, pathname, reportMetric]);
 
   // 页面卸载时报告页面停留时间
   useEffect(() => {
@@ -176,7 +176,7 @@ export const PerformanceMonitor: React.FC<PerformanceMonitorProps> = ({
     return () => {
       window.removeEventListener('unload', handleUnload);
     };
-  }, [enabled]);
+  }, [enabled, reportMetric]);
 
   return null;
 };

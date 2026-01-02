@@ -34,7 +34,7 @@ const config = {
   },
 
   // 设置测试前需要执行的文件
-  setupFilesAfterEnv: ['<rootDir>/jest.setup.js', '@testing-library/jest-dom'],
+  setupFilesAfterEnv: ['<rootDir>/__tests__/setup.ts'],
 
   // 设置转换配置，使用ts-jest处理TypeScript文件
   transform: {

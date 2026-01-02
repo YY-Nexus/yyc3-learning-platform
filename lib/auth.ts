@@ -8,7 +8,7 @@
  * @copyright Copyright (c) 2025 YYC³
  * @license MIT
  */
-import type { User } from "../types/user"
+import type { DbUser } from "../types/user"
 import jwt from "jsonwebtoken"
 import bcrypt from "bcryptjs"
 import { env } from "./env"

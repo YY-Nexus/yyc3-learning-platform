@@ -27,7 +27,7 @@ export function BrandFooter() {
 
           {/* 英文标语 */}
           <p className="text-blue-200 text-lg md:text-xl font-medium italic">
-            "All Realms Converge at Cloud Nexus, DeepStack Ignites a New Era"
+            &ldquo;All Realms Converge at Cloud Nexus, DeepStack Ignites a New Era&rdquo;
           </p>
 
           {/* 分割线 */}

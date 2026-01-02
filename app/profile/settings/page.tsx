@@ -632,13 +632,13 @@ export default function SettingsPage() {
               <div className="space-y-4">
                 <div className="space-y-2">
                   <Label htmlFor="deleteConfirmation" className="text-red-700 font-medium">
-                    请输入"删除我的账户"以确认注销
+                    请输入&ldquo;删除我的账户&rdquo;以确认注销
                   </Label>
                   <Input
                     id="deleteConfirmation"
                     value={deleteConfirmation}
                     onChange={(e) => setDeleteConfirmation(e.target.value)}
-                    placeholder="删除我的账户"
+                    placeholder="&ldquo;删除我的账户&rdquo;"
                     className="border-2 border-red-300 focus:border-red-500"
                   />
                 </div>

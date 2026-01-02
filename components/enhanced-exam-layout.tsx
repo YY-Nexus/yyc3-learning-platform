@@ -2,7 +2,7 @@
 
 import type React from "react"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useCallback } from "react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
@@ -61,7 +61,7 @@ export function EnhancedExamLayout({
   }
 
   // 全屏切换
-  const toggleFullscreen = () => {
+  const toggleFullscreen = useCallback(() => {
     if (!document.fullscreenElement) {
       document.documentElement.requestFullscreen()
       setIsFullscreen(true)
@@ -69,13 +69,13 @@ export function EnhancedExamLayout({
       document.exitFullscreen()
       setIsFullscreen(false)
     }
-  }
+  }, [])
 
   // 专注模式
-  const toggleFocusMode = () => {
+  const toggleFocusMode = useCallback(() => {
     setFocusMode(!focusMode)
     setShowSidebar(!focusMode ? false : true)
-  }
+  }, [focusMode])
 
   // 键盘快捷键
   useEffect(() => {
@@ -114,7 +114,7 @@ export function EnhancedExamLayout({
 
     window.addEventListener("keydown", handleKeyPress)
     return () => window.removeEventListener("keydown", handleKeyPress)
-  }, [currentQuestionIndex, questions.length])
+  }, [currentQuestionIndex, questions.length, onQuestionChange, onSubmit, toggleFocusMode, toggleFullscreen])
 
   return (
     <div

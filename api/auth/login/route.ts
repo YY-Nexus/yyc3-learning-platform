@@ -7,6 +7,7 @@ import { NextResponse } from 'next/server'
 import { loginSchema } from '@/lib/validators'
 import { query } from '@/lib/database'
 import { generateToken, verifyPassword } from '@/lib/auth'
+import { logger } from '@/lib/logger'
 import type { DbUser } from '@/types/user'
 
 export async function POST(request: Request) {

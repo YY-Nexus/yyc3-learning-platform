@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useCallback } from "react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
@@ -116,7 +116,7 @@ export function ProfessionalAdvancedExam({ examType, timeLimit = 120, onComplete
     }, 1000)
 
     return () => clearInterval(timer)
-  }, [examStarted, examCompleted])
+  }, [examStarted, examCompleted, handleSubmitExam])
 
   const formatTime = (seconds: number) => {
     const hours = Math.floor(seconds / 3600)
@@ -136,7 +136,7 @@ export function ProfessionalAdvancedExam({ examType, timeLimit = 120, onComplete
     }))
   }
 
-  const handleSubmitExam = () => {
+  const handleSubmitExam = useCallback(() => {
     const timeUsed = timeLimit * 60 - timeRemaining
     let totalPoints = 0
     let earnedPoints = 0
@@ -162,10 +162,9 @@ export function ProfessionalAdvancedExam({ examType, timeLimit = 120, onComplete
       } else if (question.type === "multiple") {
         if (Array.isArray(userAnswer) && userAnswer.length === question.correctAnswers.length) {
           isCorrect = userAnswer.every((ans: number) => question.correctAnswers.includes(ans))
-          score = isCorrect ? question.points : question.points * 0.5 // 部分分数
+          score = isCorrect ? question.points : question.points * 0.5
         }
       } else if (question.type === "technical-analysis" || question.type === "system-design") {
-        // 主观题评分逻辑
         if (userAnswer && userAnswer.trim().length > 0) {
           const answerLength = userAnswer.trim().length
           const hasKeywords = question.keywords.some((keyword) =>
@@ -188,7 +187,6 @@ export function ProfessionalAdvancedExam({ examType, timeLimit = 120, onComplete
         categoryScores[category].correct++
       }
 
-      // 生成反馈
       if (question.type === "single" || question.type === "multiple") {
         feedback[question.id] = isCorrect
           ? `✅ 回答正确！得分：${score}/${question.points}分`
@@ -216,7 +214,7 @@ export function ProfessionalAdvancedExam({ examType, timeLimit = 120, onComplete
     setExamCompleted(true)
     setShowResults(true)
     onComplete?.(examResults)
-  }
+  }, [timeLimit, timeRemaining, examQuestions, answers, onComplete])
 
   const currentQuestion = examQuestions[currentQuestionIndex]
 

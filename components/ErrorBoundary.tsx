@@ -16,8 +16,9 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { AlertTriangle, RefreshCcw } from 'lucide-react';
 import { logError } from '@/lib/error-handler';
+import { logger } from '@/lib/logger';
 import { Toaster } from '@/components/ui/toaster';
-import { ToastProvider, Toast } from '@/components/ui/toaster';
+import { ToastProvider, Toast } from '@/components/ui/toast';
 import { useToast } from '@/components/ui/use-toast';
 
 interface ErrorBoundaryProps {

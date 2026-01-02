@@ -11,6 +11,7 @@
 "use client";
 
 import { useState } from "react";
+import Image from "next/image";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { 
@@ -189,9 +190,11 @@ export default function Dashboard() {
                   >
                     <CardContent className="p-4">
                       <div className="flex items-start space-x-4">
-                        <img
+                        <Image
                           src={course.image || "/placeholder.svg"}
                           alt={`${course.title}课程封面`}
+                          width={80}
+                          height={80}
                           className="w-20 h-20 rounded-lg object-cover"
                         />
                         <div className="flex-1">

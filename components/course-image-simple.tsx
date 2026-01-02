@@ -1,3 +1,5 @@
+import Image from "next/image"
+
 interface CourseImageProps {
   src: string
   alt: string
@@ -59,11 +61,12 @@ export function CourseImageSimple({ src, alt, title, color, className = "" }: Co
 
   return (
     <div className={`relative overflow-hidden ${className}`}>
-      <img
+      <Image
         src={src || "/placeholder.svg"}
         alt={alt}
-        className="w-full h-48 object-cover transition-transform duration-300 hover:scale-105"
-        onError={() => {}}
+        fill
+        className="object-cover transition-transform duration-300 hover:scale-105"
+        unoptimized
       />
     </div>
   )

@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useCallback } from "react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
@@ -36,7 +36,7 @@ export function ComprehensiveExam({ examType, questions, onComplete }: Comprehen
     } else if (timeLeft === 0) {
       handleSubmit()
     }
-  }, [timeLeft, isSubmitted])
+  }, [timeLeft, isSubmitted, handleSubmit])
 
   const formatTime = (seconds: number) => {
     const hours = Math.floor(seconds / 3600)
@@ -64,7 +64,7 @@ export function ComprehensiveExam({ examType, questions, onComplete }: Comprehen
     }
   }
 
-  const calculateScore = () => {
+  const calculateScore = useCallback(() => {
     let totalScore = 0
     let maxScore = 0
     const questionResults: any[] = []
@@ -121,14 +121,14 @@ export function ComprehensiveExam({ examType, questions, onComplete }: Comprehen
       questionResults,
       timeUsed: 120 * 60 - timeLeft,
     }
-  }
+  }, [questions, answers, timeLeft])
 
-  const handleSubmit = () => {
+  const handleSubmit = useCallback(() => {
     const examResults = calculateScore()
     setResults(examResults)
     setIsSubmitted(true)
     onComplete(examResults)
-  }
+  }, [calculateScore, onComplete])
 
   if (isSubmitted && results) {
     return (

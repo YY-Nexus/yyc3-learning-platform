@@ -311,7 +311,7 @@ export function useCourses(options: UseCoursesOptions = {}) {
       setCourses(courseData)
       setLoading(false)
     }
-  }, []) // 只在组件挂载时执行一次
+  }, [autoFetch])
 
   return {
     // 状态

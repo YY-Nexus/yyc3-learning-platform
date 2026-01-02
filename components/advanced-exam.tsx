@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useCallback } from "react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
@@ -74,7 +74,7 @@ export function AdvancedExam({ examType, timeLimit = 90, onComplete }: AdvancedE
     }, 1000)
 
     return () => clearInterval(timer)
-  }, [examStarted, examCompleted])
+  }, [examStarted, examCompleted, handleSubmitExam])
 
   const formatTime = (seconds: number) => {
     const hours = Math.floor(seconds / 3600)
@@ -94,7 +94,7 @@ export function AdvancedExam({ examType, timeLimit = 90, onComplete }: AdvancedE
     }))
   }
 
-  const handleSubmitExam = () => {
+  const handleSubmitExam = useCallback(() => {
     const timeUsed = timeLimit * 60 - timeRemaining
     let totalPoints = 0
     let earnedPoints = 0
@@ -142,7 +142,7 @@ export function AdvancedExam({ examType, timeLimit = 90, onComplete }: AdvancedE
     setExamCompleted(true)
     setShowResults(true)
     onComplete?.(examResults)
-  }
+  }, [timeLimit, timeRemaining, examQuestions, answers, onComplete])
 
   const currentQuestion = examQuestions[currentQuestionIndex]
 

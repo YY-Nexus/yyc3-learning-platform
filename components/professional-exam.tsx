@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useCallback } from "react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
@@ -63,7 +63,7 @@ export function ProfessionalExam({ examType, timeLimit = 120, onComplete }: Prof
     }, 1000)
 
     return () => clearInterval(timer)
-  }, [examStarted, examCompleted])
+  }, [examStarted, examCompleted, handleSubmitExam])
 
   const formatTime = (seconds: number) => {
     const hours = Math.floor(seconds / 3600)
@@ -83,7 +83,7 @@ export function ProfessionalExam({ examType, timeLimit = 120, onComplete }: Prof
     }))
   }
 
-  const handleSubmitExam = () => {
+  const handleSubmitExam = useCallback(() => {
     const timeUsed = timeLimit * 60 - timeRemaining
     let totalCorrect = 0
     let totalPoints = 0
@@ -112,9 +112,8 @@ export function ProfessionalExam({ examType, timeLimit = 120, onComplete }: Prof
           totalPoints += question.points
         }
       } else if (question.type === "essay") {
-        // 简答题需要人工评分，这里暂时给一半分数
         if (userAnswer && userAnswer.trim().length > 50) {
-          totalPoints += question.points * 0.7 // 假设70%得分
+          totalPoints += question.points * 0.7
           categoryScores[category].correct += 0.7
         }
       }
@@ -133,7 +132,7 @@ export function ProfessionalExam({ examType, timeLimit = 120, onComplete }: Prof
     setExamCompleted(true)
     setShowResults(true)
     onComplete?.(examResults)
-  }
+  }, [timeLimit, timeRemaining, examQuestions, answers, onComplete])
 
   const currentQuestion = examQuestions[currentQuestionIndex]
 

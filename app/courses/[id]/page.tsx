@@ -2,6 +2,7 @@
 
 import { useState } from "react"
 import { useParams } from "next/navigation"
+import Image from "next/image"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
@@ -85,7 +86,13 @@ export default function CourseDetailPage() {
         {/* 课程头部 */}
         <div className="bg-white rounded-lg shadow-md overflow-hidden mb-6">
           <div className="relative h-64 sm:h-80">
-            <img src={course.image || "/placeholder.svg"} alt={course.title} className="w-full h-full object-cover" />
+            <Image
+              src={course.image || "/placeholder.svg"}
+              alt={course.title}
+              fill
+              className="object-cover"
+              unoptimized
+            />
             <div className="absolute inset-0 bg-gradient-to-t from-black/70 to-transparent flex items-end">
               <div className="p-6 text-white w-full">
                 <div className="flex flex-wrap gap-2 mb-3">
@@ -121,11 +128,15 @@ export default function CourseDetailPage() {
           <div className="border-t border-gray-200 bg-gray-50 p-4">
             <div className="flex flex-wrap items-center justify-between gap-4">
               <div className="flex items-center">
-                <img
-                  src="/placeholder.svg?height=40&width=40"
-                  alt={course.instructor}
-                  className="w-10 h-10 rounded-full mr-3"
-                />
+                <div className="relative w-10 h-10 mr-3">
+                  <Image
+                    src="/placeholder.svg?height=40&width=40"
+                    alt={course.instructor}
+                    fill
+                    className="rounded-full"
+                    unoptimized
+                  />
+                </div>
                 <div>
                   <p className="font-medium text-gray-900">{course.instructor}</p>
                   <p className="text-sm text-gray-600">课程讲师</p>
@@ -280,11 +291,15 @@ export default function CourseDetailPage() {
 
               <TabsContent value="instructor" className="bg-white rounded-lg shadow-sm p-6">
                 <div className="flex items-center mb-6">
-                  <img
-                    src="/placeholder.svg?height=80&width=80"
-                    alt={course.instructor}
-                    className="w-20 h-20 rounded-full mr-4"
-                  />
+                  <div className="relative w-20 h-20 mr-4">
+                    <Image
+                      src="/placeholder.svg?height=80&width=80"
+                      alt={course.instructor}
+                      fill
+                      className="rounded-full"
+                      unoptimized
+                    />
+                  </div>
                   <div>
                     <h2 className="text-xl font-bold text-gray-800 mb-1">{course.instructor}</h2>
                     <p className="text-gray-600 mb-2">AI领域资深专家</p>
@@ -315,11 +330,13 @@ export default function CourseDetailPage() {
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   {courseData.slice(0, 2).map((relatedCourse) => (
                     <Card key={relatedCourse.id} className="overflow-hidden">
-                      <div className="h-32 overflow-hidden">
-                        <img
+                      <div className="relative h-32 overflow-hidden">
+                        <Image
                           src={relatedCourse.image || "/placeholder.svg"}
                           alt={relatedCourse.title}
-                          className="w-full h-full object-cover"
+                          fill
+                          className="object-cover"
+                          unoptimized
                         />
                       </div>
                       <CardContent className="p-4">
@@ -362,11 +379,15 @@ export default function CourseDetailPage() {
                   {/* 模拟评价 */}
                   <div className="border-b border-gray-200 pb-6">
                     <div className="flex items-center mb-3">
-                      <img
-                        src="/placeholder.svg?height=40&width=40"
-                        alt="学员头像"
-                        className="w-10 h-10 rounded-full mr-3"
-                      />
+                      <div className="relative w-10 h-10 mr-3">
+                        <Image
+                          src="/placeholder.svg?height=40&width=40"
+                          alt="学员头像"
+                          fill
+                          className="rounded-full"
+                          unoptimized
+                        />
+                      </div>
                       <div>
                         <h4 className="font-medium text-gray-800">张同学</h4>
                         <div className="flex items-center">
@@ -390,11 +411,15 @@ export default function CourseDetailPage() {
 
                   <div className="border-b border-gray-200 pb-6">
                     <div className="flex items-center mb-3">
-                      <img
-                        src="/placeholder.svg?height=40&width=40"
-                        alt="学员头像"
-                        className="w-10 h-10 rounded-full mr-3"
-                      />
+                      <div className="relative w-10 h-10 mr-3">
+                        <Image
+                          src="/placeholder.svg?height=40&width=40"
+                          alt="学员头像"
+                          fill
+                          className="rounded-full"
+                          unoptimized
+                        />
+                      </div>
                       <div>
                         <h4 className="font-medium text-gray-800">李工程师</h4>
                         <div className="flex items-center">
@@ -418,11 +443,15 @@ export default function CourseDetailPage() {
 
                   <div>
                     <div className="flex items-center mb-3">
-                      <img
-                        src="/placeholder.svg?height=40&width=40"
-                        alt="学员头像"
-                        className="w-10 h-10 rounded-full mr-3"
-                      />
+                      <div className="relative w-10 h-10 mr-3">
+                        <Image
+                          src="/placeholder.svg?height=40&width=40"
+                          alt="学员头像"
+                          fill
+                          className="rounded-full"
+                          unoptimized
+                        />
+                      </div>
                       <div>
                         <h4 className="font-medium text-gray-800">王产品经理</h4>
                         <div className="flex items-center">
@@ -554,11 +583,15 @@ export default function CourseDetailPage() {
                           className="block hover:bg-gray-50 rounded-lg p-2 transition-colors"
                         >
                           <div className="flex">
-                            <img
-                              src={relatedCourse.image || "/placeholder.svg"}
-                              alt={relatedCourse.title}
-                              className="w-16 h-12 object-cover rounded mr-3"
-                            />
+                            <div className="relative w-16 h-12 mr-3">
+                              <Image
+                                src={relatedCourse.image || "/placeholder.svg"}
+                                alt={relatedCourse.title}
+                                fill
+                                className="object-cover rounded"
+                                unoptimized
+                              />
+                            </div>
                             <div className="flex-1">
                               <h4 className="text-sm font-medium text-gray-800 line-clamp-2 mb-1">
                                 {relatedCourse.title}

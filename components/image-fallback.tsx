@@ -1,6 +1,7 @@
 "use client"
 
 import { useState } from "react"
+import Image from "next/image"
 
 interface ImageFallbackProps {
   src: string
@@ -219,14 +220,16 @@ export function ImageFallback({
   return (
     <div className={`relative overflow-hidden ${className}`}>
       {!imageError && (
-        <img
+        <Image
           src={src || "/placeholder.svg"}
           alt={alt}
-          className={`w-full h-full object-cover transition-opacity duration-300 ${
+          fill
+          className={`object-cover transition-opacity duration-300 ${
             imageLoaded ? "opacity-100" : "opacity-0"
           }`}
           onError={handleImageError}
           onLoad={handleImageLoad}
+          unoptimized
         />
       )}
 
