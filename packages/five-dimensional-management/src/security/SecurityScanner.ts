@@ -1,5 +1,5 @@
-import { ManagementConfig, SecurityMetrics } from '@/types/IFiveDimensionalManagement';
-import { Logger } from '@/utils/Logger';
+import { ManagementConfig, SecurityMetrics } from '../types/IFiveDimensionalManagement';
+import { Logger } from '../utils/Logger';
 
 export class SecurityScanner {
   private config: ManagementConfig;

@@ -213,3 +213,20 @@ export {
   CacheManager, type CacheConfig, type CacheEntry, type CacheManagerConfig, type CacheResult, type CacheStatistics, type EvictionPolicy
 } from './cache/CacheManager';
 
+// ==================== 安全工具组件 ====================
+
+// 速率限制器
+export {
+  RateLimiter, RateLimitStrategy, type RateLimitConfig, type RateLimitEntry, type RateLimitResult, type RateLimitStats
+} from './security/RateLimiter';
+
+// 验证工具
+export {
+  ValidationUtility, type Schema, type ValidationResult, type ValidationRule
+} from './utils/ValidationUtility';
+
+// 加密工具
+export {
+  EncryptionUtility, type EncryptionConfig, type EncryptedData, type HashedData
+} from './utils/EncryptionUtility';
+

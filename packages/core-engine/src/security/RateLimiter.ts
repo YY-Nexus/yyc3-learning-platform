@@ -1,5 +1,5 @@
 import { EventEmitter } from 'eventemitter3';
-import { createLogger } from '../../../../lib/logger';
+import { createLogger } from '../utils/logger';
 
 const logger = createLogger('RateLimiter');
 
@@ -17,6 +17,7 @@ export interface RateLimitResult {
   limit: number;
   remaining: number;
   reset: Date;
+  resetTime: number;
   retryAfter?: number;
 }
 
@@ -52,7 +53,7 @@ export class RateLimiter extends EventEmitter {
 
   constructor(config: RateLimitConfig, strategy: RateLimitStrategy = RateLimitStrategy.SLIDING_WINDOW) {
     super();
-    
+
     this.config = {
       windowMs: config.windowMs,
       maxRequests: config.maxRequests,
@@ -63,7 +64,7 @@ export class RateLimiter extends EventEmitter {
     };
 
     this.strategy = strategy;
-    
+
     this.cleanupInterval = setInterval(() => {
       this.cleanup();
     }, Math.min(this.config.windowMs, 60000));
@@ -145,7 +146,8 @@ export class RateLimiter extends EventEmitter {
         allowed: true,
         limit: maxRequests,
         remaining: maxRequests - entry.count,
-        reset: new Date(entry.resetTime)
+        reset: new Date(entry.resetTime),
+        resetTime: entry.resetTime
       };
     }
 
@@ -154,7 +156,8 @@ export class RateLimiter extends EventEmitter {
         allowed: true,
         limit: maxRequests,
         remaining: maxRequests - entry.count,
-        reset: new Date(entry.resetTime)
+        reset: new Date(entry.resetTime),
+        resetTime: entry.resetTime
       };
     }
 
@@ -221,7 +224,8 @@ export class RateLimiter extends EventEmitter {
       allowed,
       limit: maxRequests,
       remaining,
-      reset: new Date(entry.resetTime)
+      reset: new Date(entry.resetTime),
+      resetTime: entry.resetTime
     };
 
     if (!allowed) {
@@ -266,8 +270,8 @@ export class RateLimiter extends EventEmitter {
     topViolators.sort((a, b) => b.violations - a.violations);
     topViolators.splice(10);
 
-    const averageRequestsPerWindow = totalRequests > 0 
-      ? totalRequests / (this.config.windowMs / 1000) 
+    const averageRequestsPerWindow = totalRequests > 0
+      ? totalRequests / (this.config.windowMs / 1000)
       : 0;
 
     return {

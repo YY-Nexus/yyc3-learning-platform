@@ -11,8 +11,8 @@
  */
 
 import { EventEmitter } from 'eventemitter3';
-import { EnhancedDecisionEngine } from './core/EnhancedDecisionEngine';
-import { EnhancedLearningSystem } from './core/EnhancedLearningSystem';
+import { EnhancedDecisionEngine, DecisionEngineConfig } from './core/EnhancedDecisionEngine';
+import { EnhancedLearningSystem, LearningSystemConfig } from './core/EnhancedLearningSystem';
 import { EnhancedMessageBus, MessageType, MessagePriority } from '../../core-engine/src/EnhancedMessageBus';
 import { Logger } from '../../five-dimensional-management/src/utils/Logger';
 
@@ -73,11 +73,11 @@ export class AutonomousAIEngine extends EventEmitter implements IAutonomousAIEng
   private _resources: Map<string, ResourceAllocation> = new Map();
 
   // === 子系统组件 ===
-  private messageBus!: MessageBus;
+  private messageBus!: EnhancedMessageBus;
   private taskScheduler!: TaskScheduler;
   private stateManager!: StateManager;
-  private decisionEngine!: DecisionEngine;
-  private learningSystem!: LearningSystem;
+  private decisionEngine!: EnhancedDecisionEngine;
+  private learningSystem!: EnhancedLearningSystem;
   private collaborationManager!: CollaborationManager;
   private resourceManager!: ResourceManager;
   private monitoringSystem!: MonitoringSystem;
@@ -231,9 +231,9 @@ export class AutonomousAIEngine extends EventEmitter implements IAutonomousAIEng
   override emit<T extends string | symbol>(event: T, ...args: any[]): boolean {
     const result = super.emit(event, ...args);
 
-    // 通过消息总线广播事件
-    if (this.messageBus && typeof event === 'string') {
-      this.messageBus.publish(event, args[0]);
+    // 通过消息总线广播事件（仅发布MessageType枚举中的事件）
+    if (this.messageBus && typeof event === 'string' && Object.values(MessageType).includes(event as MessageType)) {
+      this.messageBus.publish(event as MessageType, args[0]);
     }
 
     return result;
@@ -352,10 +352,71 @@ export class AutonomousAIEngine extends EventEmitter implements IAutonomousAIEng
       }
     };
 
-    await this.learningSystem.learnFromExperience(experience);
+    await this.learningSystem.learnFromExperience(this.convertExperienceToLearningData(experience));
 
     // 发送目标完成事件
     this.emit('goal.completed', { goal, result, experience, timestamp: new Date() });
+  }
+
+  // 将 Experience 转换为 LearningData 格式
+  private convertExperienceToLearningData(experience: Experience): import('./core/EnhancedLearningSystem').LearningData {
+    return {
+      id: experience.id,
+      type: experience.type === 'success' ? 'success' : experience.type === 'failure' ? 'failure' : 'partial',
+      context: {
+        goals: experience.context.goals,
+        constraints: experience.context.constraints,
+        resources: experience.context.resources,
+        environment: experience.context.environment,
+        stakeholders: experience.context.stakeholders
+      },
+      situation: {
+        description: experience.situation.description,
+        complexity: experience.situation.complexity,
+        uncertainty: experience.situation.uncertainty === 'extreme' ? 'high' : experience.situation.uncertainty,
+        novelty: experience.situation.novelty === 'known' ? 'familiar' : 
+                  experience.situation.novelty === 'new' ? 'novel' : 
+                  experience.situation.novelty === 'unknown' ? 'emerging' : experience.situation.novelty,
+        criticality: experience.situation.criticality
+      },
+      actions: experience.actions.map(action => ({
+        id: action.id,
+        type: action.type,
+        description: action.description,
+        parameters: action.parameters,
+        reasoning: action.reasoning
+      })),
+      outcomes: experience.outcomes.map(outcome => ({
+        id: outcome.id,
+        type: outcome.type,
+        value: outcome.value,
+        quality: outcome.quality,
+        duration: outcome.duration,
+        resourceUsage: {
+          cpu: outcome.resourceUsage.cpu,
+          memory: outcome.resourceUsage.memory,
+          storage: outcome.resourceUsage.storage,
+          network: outcome.resourceUsage.network,
+          ...outcome.resourceUsage.specialized
+        }
+      })),
+      feedback: {
+        source: experience.feedback.source,
+        type: experience.feedback.type,
+        content: experience.feedback.content,
+        sentiment: experience.feedback.sentiment,
+        confidence: experience.feedback.confidence,
+        actionability: experience.feedback.actionability === 'strategic' ? 'long_term' : experience.feedback.actionability
+      },
+      timestamp: experience.timestamp,
+      metadata: {
+        tags: Array.from(experience.metadata.tags),
+        category: experience.metadata.category,
+        importance: experience.metadata.importance === 'critical' ? 'high' : experience.metadata.importance,
+        applicability: Array.from(experience.metadata.applicability),
+        sharingConsent: experience.metadata.sharingConsent
+      }
+    };
   }
 
   // === 任务执行 ===
@@ -487,9 +548,128 @@ export class AutonomousAIEngine extends EventEmitter implements IAutonomousAIEng
   // === 自主决策 ===
 
   async makeDecision(context: DecisionContext, options: DecisionOption[]): Promise<Decision> {
-    const decision = await this.decisionEngine.makeDecision(context, options);
+    const convertedOptions = this.convertDecisionOptions(options);
+    const decisionResult = await this.decisionEngine.makeDecision(
+      this.convertDecisionContext(context),
+      convertedOptions
+    );
+    const decision = this.convertDecisionResultToDecision(decisionResult, context);
     this._decisions.set(decision.id, decision);
     return decision;
+  }
+
+  // 将 DecisionOption 转换为 EnhancedDecisionEngine 的 DecisionOption
+  private convertDecisionOptions(options: DecisionOption[]): import('./core/EnhancedDecisionEngine').DecisionOption[] {
+    return options.map(option => ({
+      id: option.id,
+      description: option.description,
+      actions: [],
+      estimatedCost: option.costs.financial || 0,
+      estimatedTime: option.costs.time || 0,
+      resourceRequirements: {
+        cpu: 0,
+        memory: 0,
+        storage: 0,
+        network: 0
+      },
+      riskLevel: option.risks.reduce((acc, risk) => {
+        const impactValue = risk.impact === 'critical' ? 4 : 
+                           risk.impact === 'high' ? 3 : 
+                           risk.impact === 'medium' ? 2 : 
+                           risk.impact === 'low' ? 1 : 0;
+        return acc + (risk.probability * impactValue);
+      }, 0) / (option.risks.length || 1),
+      confidence: option.confidence,
+      expectedOutcome: option.expectedOutcomes.reduce((acc, outcome) => {
+        acc[outcome.metric] = outcome.value;
+        return acc;
+      }, {} as Record<string, any>)
+    }));
+  }
+
+  // 将 DecisionContext 转换为 EnhancedDecisionEngine 的 DecisionContext
+  private convertDecisionContext(context: DecisionContext): import('./core/EnhancedDecisionEngine').DecisionContext {
+    return {
+      goalId: context.id,
+      taskId: context.id,
+      timestamp: new Date(),
+      state: context.parameters,
+      environment: context.metadata || {},
+      constraints: {
+        maxCost: Number.MAX_VALUE,
+        maxTime: context.deadline ? context.deadline.getTime() - Date.now() : Number.MAX_VALUE,
+        maxResources: { cpu: Number.MAX_VALUE, memory: Number.MAX_VALUE, storage: Number.MAX_VALUE, network: Number.MAX_VALUE },
+        securityLevel: 'medium',
+        compliance: []
+      },
+      preferences: {
+        prioritizeSpeed: context.priority === 'high' || context.priority === 'critical',
+        prioritizeCost: false,
+        prioritizeQuality: context.priority === 'critical',
+        riskTolerance: context.priority === 'critical' ? 'low' : 'medium'
+      }
+    };
+  }
+
+  // 将 DecisionResult 转换为 Decision
+  private convertDecisionResultToDecision(
+    decisionResult: import('./core/EnhancedDecisionEngine').DecisionResult,
+    context: DecisionContext
+  ): Decision {
+    const now = new Date();
+    const duration = decisionResult.executionPlan.estimatedDuration;
+    const endDate = new Date(now.getTime() + duration);
+    
+    return {
+      id: this.generateId('decision'),
+      contextId: context.id,
+      selectedOption: decisionResult.selectedOption.id,
+      reasoning: {
+        criteria: context.objectives.map(obj => obj.name),
+        weights: {},
+        scores: {},
+        methodology: 'multi_criteria_decision',
+        assumptions: []
+      },
+      confidence: decisionResult.confidence,
+      alternatives: decisionResult.alternativeOptions.map(alt => alt.optionId),
+      expectedValue: decisionResult.evaluation.overallScore,
+      riskAssessment: {
+        overall: decisionResult.confidence > 0.8 ? 'low' : decisionResult.confidence > 0.5 ? 'medium' : 'high',
+        factors: [],
+        mitigation: [],
+        contingencyPlans: []
+      },
+      implementationPlan: {
+        phases: decisionResult.executionPlan.steps.map(step => ({
+          id: step.id,
+          name: step.action.type || 'Action',
+          description: '',
+          duration: step.estimatedDuration,
+          dependencies: step.dependencies,
+          deliverables: [],
+          risks: []
+        })),
+        resources: {
+          cpu: { min: 0, max: 0, unit: 'cores' },
+          memory: { min: 0, max: 0, unit: 'MB' },
+          storage: { min: 0, max: 0, unit: 'GB' },
+          network: { min: 0, max: 0, unit: 'Mbps' },
+          specialized: []
+        },
+        timeline: {
+          start: now,
+          end: endDate,
+          milestones: [],
+          criticalPath: []
+        },
+        dependencies: Array.from(decisionResult.executionPlan.dependencies.entries()).flatMap(([key, values]) => 
+          values.map(v => `${key}->${v}`)
+        ),
+        milestones: []
+      },
+      timestamp: decisionResult.timestamp
+    };
   }
 
   async evaluateDecision(decisionId: string): Promise<DecisionEvaluation> {
@@ -497,14 +677,150 @@ export class AutonomousAIEngine extends EventEmitter implements IAutonomousAIEng
     if (!decision) {
       throw new Error(`Decision not found: ${decisionId}`);
     }
-    return await this.decisionEngine.evaluateDecision(decision);
+    
+    return {
+      decisionId,
+      actualOutcomes: [],
+      effectiveness: {
+        goalAlignment: 0,
+        efficiency: 0,
+        stakeholderSatisfaction: 0,
+        innovation: 0,
+        adaptability: 0
+      },
+      lessons: [],
+      recommendations: []
+    };
+  }
+
+  async reason(_params: {
+    context: string;
+    constraints: readonly string[];
+    objectives: readonly string[];
+    options?: {
+      depth?: 'shallow' | 'deep';
+      timeout?: number;
+      includeAlternatives?: boolean;
+    };
+  }): Promise<{
+    reasoning: string;
+    alternatives?: string[];
+    confidence: number;
+  }> {
+    const startTime = Date.now();
+    const timeout = _params.options?.timeout || 30000;
+
+    try {
+      const context: DecisionContext = {
+        id: `reason_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+        type: 'optimization',
+        priority: 'high',
+        description: _params.context,
+        parameters: {
+          context: _params.context,
+          depth: _params.options?.depth || 'deep'
+        },
+        constraints: _params.constraints.map(c => ({
+          type: 'quality' as const,
+          description: c,
+          parameters: {},
+          severity: 'warning' as const
+        })),
+        objectives: _params.objectives.map(o => ({
+          name: o,
+          weight: 1.0,
+          target: 1.0,
+          unit: 'score',
+          optimization: 'maximize' as const
+        })),
+        stakeholders: ['system'],
+        deadline: new Date(Date.now() + timeout),
+        metadata: {
+          source: 'reasoning',
+          category: 'ai-reasoning',
+          tags: ['reasoning', _params.options?.depth || 'deep'],
+          historicalData: false,
+          requiredConfidence: 0.7
+        }
+      };
+
+      const options: DecisionOption[] = [
+        {
+          id: 'primary',
+          name: 'Primary Solution',
+          description: 'Primary reasoning solution',
+          parameters: {
+            context: _params.context,
+            constraints: _params.constraints,
+            objectives: _params.objectives
+          },
+          expectedOutcomes: [
+            {
+              metric: 'success_rate',
+              value: 0.85,
+              probability: 0.9,
+              timeHorizon: 1
+            }
+          ],
+          risks: [
+            {
+              type: 'uncertainty',
+              description: 'Reasoning uncertainty',
+              probability: 0.15,
+              impact: 'low',
+              mitigation: 'Multiple reasoning strategies'
+            }
+          ],
+          costs: {
+            computational: 0.5,
+            financial: 0.1,
+            time: 0.3,
+            opportunity: 0.1
+          },
+          benefits: {
+            efficiency: 0.8,
+            quality: 0.85,
+            innovation: 0.9,
+            collaboration: 0.7
+          },
+          confidence: 0.85
+        }
+      ];
+
+      const decision = await this.makeDecision(context, options);
+
+      const result: {
+        reasoning: string;
+        alternatives?: string[];
+        confidence: number;
+      } = {
+        reasoning: decision.reasoning.methodology || 'Multi-objective optimization reasoning',
+        confidence: decision.confidence
+      };
+
+      if (_params.options?.includeAlternatives) {
+        result.alternatives = [
+          'Alternative approach: Focus on primary objective',
+          'Alternative approach: Balance all objectives',
+          'Alternative approach: Prioritize constraints'
+        ];
+      }
+
+      return result;
+    } catch (error) {
+      logger.error('Reasoning failed:', error instanceof Error ? error : undefined);
+      return {
+        reasoning: `Reasoning failed: ${error instanceof Error ? error.message : 'Unknown error'}`,
+        confidence: 0
+      };
+    }
   }
 
   // === 学习与适应 ===
 
   async learnFromExperience(experience: Experience): Promise<void> {
     this._experiences.set(experience.id, experience);
-    await this.learningSystem.learnFromExperience(experience);
+    await this.learningSystem.learnFromExperience(this.convertExperienceToLearningData(experience));
 
     this.emit('learning.completed', { experience, timestamp: new Date() });
   }
@@ -866,7 +1182,8 @@ export class AutonomousAIEngine extends EventEmitter implements IAutonomousAIEng
 
     // 订阅引擎事件并转发
     this.messageBus.subscribe(MessageType.ENGINE_EVENT, async (message) => {
-      this.emit(message.payload.event, message.payload.data);
+      const msg = message as any;
+      this.emit(msg.payload.event, msg.payload.data);
     }, {
       id: 'engine-event-forwarder'
     });
@@ -874,7 +1191,8 @@ export class AutonomousAIEngine extends EventEmitter implements IAutonomousAIEng
     // 订阅任务请求
     this.messageBus.subscribe(MessageType.TASK_REQUEST, async (message) => {
       try {
-        const task = message.payload as Task;
+        const msg = message as any;
+        const task = msg.payload as Task;
         const result = await this.executeTask(task);
         
         // 发送任务响应
@@ -883,22 +1201,23 @@ export class AutonomousAIEngine extends EventEmitter implements IAutonomousAIEng
           result,
           status: 'completed'
         }, {
-          correlationId: message.correlationId,
-          replyTo: message.replyTo,
-          priority: message.priority,
+          correlationId: msg.correlationId,
+          replyTo: msg.replyTo,
+          priority: msg.priority,
           metadata: {
-            ...message.metadata,
+            ...msg.metadata,
             originalTaskId: task.id
           }
         });
       } catch (error) {
+        const msg = message as any;
         await this.messageBus.publish(MessageType.TASK_RESPONSE, {
-          taskId: message.payload.id,
+          taskId: (msg.payload as Task).id,
           error: (error as Error).message,
           status: 'failed'
         }, {
-          correlationId: message.correlationId,
-          replyTo: message.replyTo,
+          correlationId: msg.correlationId,
+          replyTo: msg.replyTo,
           priority: MessagePriority.HIGH
         });
       }
@@ -908,7 +1227,8 @@ export class AutonomousAIEngine extends EventEmitter implements IAutonomousAIEng
 
     // 订阅目标更新
     this.messageBus.subscribe(MessageType.GOAL_UPDATE, async (message) => {
-      const { goalId, progress } = message.payload;
+      const msg = message as any;
+      const { goalId, progress } = msg.payload as { goalId: string; progress?: number };
       if (progress !== undefined) {
         await this.updateGoalProgress(goalId, progress);
       }
@@ -919,27 +1239,29 @@ export class AutonomousAIEngine extends EventEmitter implements IAutonomousAIEng
     // 订阅决策请求
     this.messageBus.subscribe(MessageType.DECISION_REQUEST, async (message) => {
       try {
-        const { context, options } = message.payload;
+        const msg = message as any;
+        const { context, options } = msg.payload as { context: DecisionContext; options: DecisionOption[] };
         const decision = await this.makeDecision(context, options);
         
         await this.messageBus.publish(MessageType.DECISION_RESPONSE, {
           decision,
           status: 'completed'
         }, {
-          correlationId: message.correlationId,
-          replyTo: message.replyTo,
+          correlationId: msg.correlationId,
+          replyTo: msg.replyTo,
           metadata: {
-            ...message.metadata,
+            ...msg.metadata,
             decisionId: decision.id
           }
         });
       } catch (error) {
+        const msg = message as any;
         await this.messageBus.publish(MessageType.DECISION_RESPONSE, {
           error: (error as Error).message,
           status: 'failed'
         }, {
-          correlationId: message.correlationId,
-          replyTo: message.replyTo,
+          correlationId: msg.correlationId,
+          replyTo: msg.replyTo,
           priority: MessagePriority.HIGH
         });
       }
@@ -949,7 +1271,8 @@ export class AutonomousAIEngine extends EventEmitter implements IAutonomousAIEng
 
     // 订阅学习更新
     this.messageBus.subscribe(MessageType.LEARNING_UPDATE, async (message) => {
-      const experience = message.payload as Experience;
+      const msg = message as any;
+      const experience = msg.payload as Experience;
       await this.learnFromExperience(experience);
     }, {
       id: 'learning-update-handler'
@@ -957,7 +1280,8 @@ export class AutonomousAIEngine extends EventEmitter implements IAutonomousAIEng
 
     // 订阅资源分配请求
     this.messageBus.subscribe(MessageType.RESOURCE_ALLOCATION, async (message) => {
-      const { type, payload } = message.payload;
+      const msg = message as any;
+      const { type, payload } = msg.payload as { type: string; payload: any };
       
       if (type === 'allocation.failed') {
         this.emit('resource.error', payload);
@@ -968,16 +1292,16 @@ export class AutonomousAIEngine extends EventEmitter implements IAutonomousAIEng
             type: 'allocation.success',
             payload: allocation
           }, {
-            correlationId: message.correlationId,
-            replyTo: message.replyTo
+            correlationId: msg.correlationId,
+            replyTo: msg.replyTo
           });
         } catch (error) {
           await this.messageBus.publish(MessageType.RESOURCE_ALLOCATION, {
             type: 'allocation.failed',
             payload: { error: (error as Error).message }
           }, {
-            correlationId: message.correlationId,
-            replyTo: message.replyTo,
+            correlationId: msg.correlationId,
+            replyTo: msg.replyTo,
             priority: MessagePriority.HIGH
           });
         }
@@ -988,13 +1312,14 @@ export class AutonomousAIEngine extends EventEmitter implements IAutonomousAIEng
 
     // 订阅健康检查
     this.messageBus.subscribe(MessageType.HEALTH_CHECK, async (message) => {
+      const msg = message as any;
       const healthStatus = this.getHealthStatus();
       await this.messageBus.publish(MessageType.HEALTH_CHECK, {
         status: healthStatus,
         timestamp: Date.now()
       }, {
-        correlationId: message.correlationId,
-        replyTo: message.replyTo
+        correlationId: msg.correlationId,
+        replyTo: msg.replyTo
       });
     }, {
       id: 'health-check-handler'
@@ -1183,8 +1508,33 @@ export class AutonomousAIEngine extends EventEmitter implements IAutonomousAIEng
   private async reconfigureSubsystems(): Promise<void> {
     // 重新配置各子系统
     await this.resourceManager.reconfigure(this._configuration.resourceLimits);
-    await this.decisionEngine.reconfigure(this._configuration.decisionMakingConfig);
-    await this.learningSystem.reconfigure(this._configuration.learningConfig);
+    
+    // Convert DecisionMakingConfiguration to DecisionEngineConfig
+    const decisionEngineConfig: Partial<DecisionEngineConfig> = {
+      enableAIAssistedDecision: this._configuration.decisionMakingConfig.enableDecisionMaking,
+      enableLearning: true,
+      maxOptionsToEvaluate: 10,
+      decisionTimeout: this._configuration.decisionMakingConfig.timeHorizon,
+      modelAdapterConfig: this._configuration.modelAdapterConfig
+    };
+    await this.decisionEngine.reconfigure(decisionEngineConfig);
+    
+    // Convert LearningConfiguration to LearningSystemConfig
+    const learningSystemConfig: Partial<LearningSystemConfig> = {
+      enableLearning: this._configuration.learningConfig.enableLearning,
+      experienceRetention: this._configuration.learningConfig.experienceRetention,
+      adaptationThreshold: this._configuration.learningConfig.adaptationThreshold,
+      learningRate: this._configuration.learningConfig.learningRate,
+      explorationRate: this._configuration.learningConfig.explorationRate,
+      knowledgeDomains: [...this._configuration.learningConfig.knowledgeDomains],
+      feedbackIntegration: {
+        ...this._configuration.learningConfig.feedbackIntegration,
+        sources: [...this._configuration.learningConfig.feedbackIntegration.sources]
+      },
+      modelAdapterConfig: this._configuration.modelAdapterConfig
+    };
+    await this.learningSystem.reconfigure(learningSystemConfig);
+    
     await this.collaborationManager.reconfigure(this._configuration.collaborationConfig);
     await this.monitoringSystem.reconfigure(this._configuration.monitoringConfig);
     await this.securityManager.reconfigure(this._configuration.securityConfig);
@@ -1608,7 +1958,7 @@ class MessageBus extends BaseSubsystem {
         try {
           handler(payload);
         } catch (error) {
-          logger.error(`Error in event handler for ${event}:`, error);
+          logger.error(`Error in event handler for ${event}:`, error instanceof Error ? error : undefined);
         }
       });
     }

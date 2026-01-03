@@ -135,6 +135,7 @@ export interface DecisionEngineConfig {
 export class EnhancedDecisionEngine extends EventEmitter {
   private config: DecisionEngineConfig;
   private modelAdapter?: ModelAdapter;
+  private status: 'active' | 'stopped' | 'initializing' = 'stopped';
   private decisionHistory: DecisionLearningData[] = [];
   private performanceMetrics: Map<string, number[]> = new Map();
   private contextCache: Map<string, DecisionContext> = new Map();
@@ -549,5 +550,37 @@ export class EnhancedDecisionEngine extends EventEmitter {
     this.performanceMetrics.clear();
     this.contextCache.clear();
     this.emit('decision:history-cleared');
+  }
+
+  async start(): Promise<void> {
+    if (this.status === 'active') return;
+    
+    this.status = 'initializing';
+    
+    if (this.config.enableAIAssistedDecision && this.config.modelAdapterConfig && !this.modelAdapter) {
+      this.initializeModelAdapter();
+    }
+    
+    this.status = 'active';
+    this.emit('decision:started', { timestamp: new Date() });
+  }
+
+  async stop(): Promise<void> {
+    this.status = 'stopped';
+    this.removeAllListeners();
+    this.decisionHistory = [];
+    this.performanceMetrics.clear();
+    this.contextCache.clear();
+  }
+
+  async reconfigure(newConfig: Partial<DecisionEngineConfig>): Promise<void> {
+    this.config = {
+      ...this.config,
+      ...newConfig
+    };
+
+    if (this.config.enableAIAssistedDecision && this.config.modelAdapterConfig && !this.modelAdapter) {
+      this.initializeModelAdapter();
+    }
   }
 }

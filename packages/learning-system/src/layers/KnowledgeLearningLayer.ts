@@ -8,15 +8,24 @@
 
 import { EventEmitter } from 'events';
 import crypto from 'crypto';
+import type {
+  ConfigObject,
+  Content,
+  NodeData,
+  Pattern,
+  EventListener
+} from '../types/common.types';
 import {
   IKnowledgeLearningLayer,
   KnowledgeItem,
   KnowledgeGraph,
+  KnowledgeNode,
   ReasoningEngine,
   KnowledgeMetrics,
   KnowledgeLayerConfig,
   LayerStatus,
   KnowledgeExtractionResult,
+  ValidationRule,
   ValidationResult,
   OrganizationResult,
   CategorizationResult,
@@ -40,40 +49,41 @@ import {
   InferenceResult,
   ExplanationRequest,
   Explanation,
-  ExplanationStep,
-  ValidationRule,
-  KnowledgeNode,
   NodeType,
   NodeContent,
-  NodeProperties
+  NodeProperties,
+  LearningExperience,
+  LearningResult,
+  KnowledgeLearning,
+  ReasoningPath
 } from '../ILearningSystem';
 
 // Additional interfaces for completeness
 interface GeneralizationAnalysis {
-  patterns: any[];
-  commonalities: any[];
-  rules: any[];
+  patterns: Pattern[];
+  commonalities: unknown[];
+  rules: ValidationRule[];
   confidence: number;
 }
 
 interface GeneralRule {
   id: string;
-  pattern: any;
-  conditions: any[];
-  conclusions: any[];
+  pattern: Pattern;
+  conditions: ConfigObject[];
+  conclusions: unknown[];
   confidence: number;
 }
 
 interface PruningCandidate {
   knowledgeId: string;
   reason: string;
-  impact: any;
+  impact: number;
 }
 
 interface PruningImpactAnalysis {
   graphIntegrity: number;
   reasoningImpact: number;
-  knowledgeLoss: any;
+  knowledgeLoss: unknown;
 }
 
 /**
@@ -140,10 +150,14 @@ export class KnowledgeLearningLayer extends EventEmitter implements IKnowledgeLe
       this._config = { ...config };
 
       // Initialize knowledge graph
-      await this._knowledge.initialize(config.knowledgeGraph);
+      if (this._knowledge.initialize) {
+        await this._knowledge.initialize(config.knowledgeGraph as unknown as ConfigObject);
+      }
 
       // Initialize reasoning engine
-      await this._reasoning.initialize(config.reasoningEngine);
+      if (this._reasoning.initialize) {
+        await this._reasoning.initialize(config.reasoningEngine as unknown as ConfigObject);
+      }
 
       // Load existing knowledge
       await this.loadExistingKnowledge();
@@ -209,6 +223,92 @@ export class KnowledgeLearningLayer extends EventEmitter implements IKnowledgeLe
   }
 
   /**
+   * Learn from experience
+   * 从经验中学习
+   */
+  async learnFromExperience(experience: LearningExperience): Promise<LearningResult> {
+    try {
+      // Extract knowledge from experience outcomes
+      const knowledgeLearnings: KnowledgeLearning[] = [];
+      
+      for (const outcome of experience.outcomes) {
+        // Create knowledge item from outcome
+        const knowledgeItem: KnowledgeItem = {
+          id: this.generateId(),
+          type: 'fact',
+          content: {
+            id: this.generateId(),
+            type: 'fact',
+            content: `Experience outcome: ${outcome.success ? 'success' : 'failure'} with effectiveness ${outcome.effectiveness}`,
+            format: 'text'
+          } as any,
+          source: {
+            id: experience.id,
+            type: 'internal',
+            name: 'experience-learning',
+            reliability: 0.8
+          },
+          confidence: outcome.effectiveness,
+          validity: {
+            start: Date.now(),
+            end: Date.now() + 365 * 24 * 60 * 60 * 1000,
+            confidence: 0.8
+          },
+          relationships: [],
+          metadata: { id: this.generateId(),
+
+            createdAt: Date.now(),
+            updatedAt: Date.now(),
+            tags: ['experience', 'outcome'],
+            source: 'learning',
+            version: '1.0.0'
+          }
+        };
+        
+        // Add knowledge to graph
+        await this.acquireKnowledge(knowledgeItem);
+        
+        knowledgeLearnings.push({
+          id: this.generateId(),
+          knowledgeId: knowledgeItem.id,
+          learnings: [`Outcome: ${outcome.success ? 'success' : 'failure'}, effectiveness: ${outcome.effectiveness}`],
+          confidence: outcome.effectiveness,
+          timestamp: Date.now()
+        });
+      }
+      
+      // Update knowledge graph statistics
+      this._metrics.knowledgeItems = this._knowledge.nodes.length;
+      this._metrics.knowledgeEdges = this._knowledge.edges.length;
+      
+      // Create learning result
+      const result: LearningResult = {
+        experienceId: experience.id,
+        timestamp: Date.now(),
+        behavioralLearnings: [],
+        strategicLearnings: [],
+        knowledgeLearnings,
+        confidence: 0.85,
+        applicability: {
+          contexts: ['knowledge-acquisition', 'reasoning'],
+          timeRange: {
+            start: Date.now() - 86400000,
+            end: Date.now() + 365 * 24 * 60 * 60 * 1000
+          },
+          confidence: 0.85,
+          impact: 0.9
+        }
+      };
+      
+      this.emit('knowledge_learned', result);
+      return result;
+    } catch (error) {
+      this.emit('error', error);
+      throw error;
+    }
+  }
+
+  /**
    * Acquire knowledge
    * 获取知识
    */
@@ -232,7 +332,7 @@ export class KnowledgeLearningLayer extends EventEmitter implements IKnowledgeLe
       // Validate against existing knowledge
       if (this._config.knowledgeValidationEnabled) {
         const validationResult = await this.validateKnowledgeItemIntegrity(nodeId);
-        if (!validationResult.valid) {
+        if (!validationResult.isValid) {
           this.emit('validation_failed', validationResult);
         }
       }
@@ -260,7 +360,7 @@ export class KnowledgeLearningLayer extends EventEmitter implements IKnowledgeLe
       const startTime = Date.now();
 
       // Extract entities
-      const entities = await this.extractEntities(source);
+      const entities = await this.extractEntities(source) as unknown as NodeData[];
 
       // Extract relationships
       const relationships = await this.extractRelationships(source);
@@ -269,7 +369,7 @@ export class KnowledgeLearningLayer extends EventEmitter implements IKnowledgeLe
       const patterns = await this.extractPatterns(source);
 
       // Create knowledge items
-      const knowledgeItems = await this.createKnowledgeItemsFromExtraction(entities, relationships, patterns);
+      const knowledgeItems = await this.createKnowledgeItemsFromExtraction(entities, relationships, patterns as Pattern[]);
 
       // Add extracted knowledge
       for (const item of knowledgeItems) {
@@ -311,12 +411,14 @@ export class KnowledgeLearningLayer extends EventEmitter implements IKnowledgeLe
       );
 
       const isValid = results.every(result => result.passed);
-      const issues = results.filter(result => !result.passed).map(result => result.error);
+      const passed = isValid;
+      const issues = results.filter(result => !result.passed && result.error).map(result => result.error!);
 
       return {
         id: this.generateId(),
         knowledgeId,
         isValid,
+        passed,
         issues,
         confidence: isValid ? 1.0 : 0.5,
         timestamp: Date.now()
@@ -326,6 +428,7 @@ export class KnowledgeLearningLayer extends EventEmitter implements IKnowledgeLe
         id: this.generateId(),
         knowledgeId,
         isValid: false,
+        passed: false,
         issues: [(error as Error).message],
         confidence: 0.0,
         timestamp: Date.now()
@@ -382,10 +485,10 @@ export class KnowledgeLearningLayer extends EventEmitter implements IKnowledgeLe
       }
 
       // Analyze content
-      const analysis = await this.analyzeKnowledgeContent(node);
+      const analysis = await this.analyzeKnowledgeContent(knowledgeId);
 
       // Determine categories
-      const categories = await this.determineCategories(analysis);
+      const categories = await this.determineCategories(knowledgeId);
 
       // Apply categories
       node.properties.categories = categories;
@@ -413,7 +516,7 @@ export class KnowledgeLearningLayer extends EventEmitter implements IKnowledgeLe
   async linkKnowledge(link: KnowledgeLink): Promise<void> {
     try {
       // Validate link
-      this.validateKnowledgeLink(link);
+      await this.validateKnowledge(link.sourceId);
 
       // Check if nodes exist
       const sourceNode = this._knowledge.nodes.find(n => n.id === link.sourceId);
@@ -425,28 +528,37 @@ export class KnowledgeLearningLayer extends EventEmitter implements IKnowledgeLe
 
       // Check for duplicate links
       const existingLink = this._knowledge.edges.find(
-        e => e.source === link.sourceId && e.target === link.targetId && e.type === link.type
+        e => e.source === link.sourceId && e.target === link.targetId && e.type === link.type as any
       );
 
       if (existingLink) {
         // Update existing link
         existingLink.weight = link.weight;
-        existingLink.properties = { ...existingLink.properties, ...link.properties };
+        existingLink.properties = {
+          ...existingLink.properties,
+          metadata: { ...existingLink.properties.metadata, ...link.properties }
+        };
       } else {
         // Create new link
         const edge = {
           id: this.generateId(),
           source: link.sourceId,
           target: link.targetId,
-          type: link.type,
+          type: link.type as any,
           weight: link.weight,
-          properties: link.properties
+          properties: {
+
+            type: link.type,
+            source: link.sourceId,
+            target: link.targetId,
+            weight: link.weight,
+            metadata: link.properties || {}
+          }
         };
 
         this._knowledge.edges.push(edge);
 
         // Update node relationships
-        sourceNode.relationships.push(edge.id);
         if (!sourceNode.relationships.includes(edge.id)) {
           sourceNode.relationships.push(edge.id);
         }
@@ -477,7 +589,65 @@ export class KnowledgeLearningLayer extends EventEmitter implements IKnowledgeLe
       }
 
       // Execute reasoning
-      const result = await this._reasoning.reason(query);
+      let result: ReasoningResult;
+      if (this._reasoning.reason) {
+        const reasoningOutput = await this._reasoning.reason(query.query, query.context);
+        
+        const reasoningPath: ReasoningPath = {
+          steps: reasoningOutput.steps || [],
+          logic: {
+
+            type: 'deductive',
+            structure: reasoningOutput.logic || {},
+            metadata: {}
+          },
+          assumptions: reasoningOutput.assumptions || [],
+          conclusions: reasoningOutput.conclusions || []
+        };
+        
+        result = {
+          query: query,
+          conclusion: reasoningOutput.conclusion || {
+
+            content: reasoningOutput.answer || reasoningOutput.result || 'No conclusion',
+            confidence: reasoningOutput.confidence || 0.5,
+            timestamp: Date.now()
+          },
+          reasoning: reasoningPath,
+          confidence: reasoningOutput.confidence || 0.5,
+          evidence: reasoningOutput.evidence || [],
+          assumptions: reasoningOutput.assumptions || [],
+          alternatives: reasoningOutput.alternatives || []
+        };
+      } else {
+        // Fallback: create a basic result
+        const fallbackReasoningPath: ReasoningPath = {
+          steps: [],
+          logic: {
+
+            type: 'fallback',
+            structure: {},
+            metadata: {}
+          },
+          assumptions: [],
+          conclusions: []
+        };
+        
+        result = {
+          query: query,
+          conclusion: {
+
+            content: 'No reasoning engine available',
+            confidence: 0,
+            timestamp: Date.now()
+          },
+          reasoning: fallbackReasoningPath,
+          confidence: 0,
+          evidence: [],
+          assumptions: [],
+          alternatives: []
+        };
+      }
 
       // Cache result
       this._reasoningCache.set(cacheKey, result);
@@ -506,25 +676,25 @@ export class KnowledgeLearningLayer extends EventEmitter implements IKnowledgeLe
     try {
       // Prepare reasoning query
       const query: ReasoningQuery = {
+        id: this.generateId(),
+        query: `Inference: ${inference.premises.join(', ')}`,
         type: 'inferential',
-        content: {
-          premises: inference.premises,
-          inferenceRules: inference.rules,
-          context: inference.context
-        },
-        context: inference.context,
-        constraints: inference.constraints || [],
-        preferences: inference.preferences || []
+        context: inference.context || {}
       };
 
       // Execute reasoning
       const reasoningResult = await this.reason(query);
 
+      // Convert ReasoningPath to string array for steps
+      const steps: string[] = reasoningResult.reasoning.steps.map(step => 
+        `${step.operation}: ${JSON.stringify(step.inputs)} -> ${JSON.stringify(step.output)}`
+      );
+
       return {
         id: this.generateId(),
-        conclusions: [reasoningResult.conclusion],
+        conclusions: [reasoningResult.conclusion.content],
         confidence: reasoningResult.confidence,
-        steps: reasoningResult.reasoning,
+        steps: steps,
         timestamp: Date.now()
       };
     } catch (error) {
@@ -548,29 +718,30 @@ export class KnowledgeLearningLayer extends EventEmitter implements IKnowledgeLe
       // Create a simple reasoning result based on the knowledge item
       const reasoningResult: ReasoningResult = {
         query: {
-          type: 'explanatory',
-          content: { target: explanationRequest.knowledgeId },
-          context: {},
-          constraints: [],
-          preferences: []
+          id: crypto.randomUUID(),
+          query: `Explain ${explanationRequest.knowledgeId}`,
+          context: { levelOfDetail: explanationRequest.levelOfDetail },
+          type: 'explanatory'
         },
         conclusion: {
           id: crypto.randomUUID(),
-          content: knowledgeItem.content,
-          type: 'statement',
-          confidence: knowledgeItem.properties.confidence || 0.8
+          content: typeof knowledgeItem.content === 'string' ? knowledgeItem.content : JSON.stringify(knowledgeItem.content),
+          confidence: knowledgeItem.properties.confidence || 0.8,
+          timestamp: Date.now()
         },
-        reasoning: [
-          {
+        reasoning: {
+          steps: [],
+          logic: {
             id: crypto.randomUUID(),
-            type: 'inference',
-            premise: knowledgeItem.content,
-            conclusion: knowledgeItem.content,
-            confidence: knowledgeItem.properties.confidence || 0.8
-          }
-        ],
+            type: 'explanatory',
+            structure: {},
+            metadata: {}
+          },
+          assumptions: [],
+          conclusions: []
+        },
         confidence: knowledgeItem.properties.confidence || 0.8,
-        evidence: [knowledgeItem.content],
+        evidence: [],
         assumptions: [],
         alternatives: []
       };
@@ -602,8 +773,8 @@ export class KnowledgeLearningLayer extends EventEmitter implements IKnowledgeLe
         case 'detailed':
           content = `Conclusion: ${reasoningResult.conclusion.content}\n\n`;
           content += `Confidence: ${(reasoningResult.confidence * 100).toFixed(0)}%\n\n`;
-          content += `Reasoning steps:\n${reasoningResult.reasoning.map((step, index) => 
-            `${index + 1}. ${step.type}: ${step.premise}`
+          content += `Reasoning steps:\n${reasoningResult.reasoning.steps.map((step, index) => 
+            `${index + 1}. ${step.operation}: ${JSON.stringify(step.inputs)} -> ${JSON.stringify(step.output)}`
           ).join('\n')}`;
           break;
         case 'technical':
@@ -634,9 +805,8 @@ export class KnowledgeLearningLayer extends EventEmitter implements IKnowledgeLe
    * Update knowledge
    * 更新知识
    */
-  async updateKnowledge(update: KnowledgeUpdate): Promise<void> {
+  async updateKnowledge(knowledgeId: string, update: KnowledgeUpdate): Promise<void> {
     try {
-      const knowledgeId = update.knowledgeId;
       const node = this._knowledge.nodes.find(n => n.id === knowledgeId);
       if (!node) {
         throw new Error(`Knowledge item ${knowledgeId} not found`);
@@ -645,18 +815,18 @@ export class KnowledgeLearningLayer extends EventEmitter implements IKnowledgeLe
       // Apply update from the updates field
       if (update.updates) {
         // Update content if provided
-        if (update.updates.content) {
-          node.content = { ...node.content, ...update.updates.content };
+        if (update.updates['content']) {
+          node.content = { ...node.content, ...update.updates['content'] };
         }
-        
+
         // Update properties if provided
-        if (update.updates.properties) {
-          node.properties = { ...node.properties, ...update.updates.properties };
+        if (update.updates['properties']) {
+          node.properties = { ...node.properties, ...update.updates['properties'] };
         }
-        
+
         // Update relationships if provided
-        if (update.updates.relationships) {
-          node.relationships = update.updates.relationships;
+        if (update.updates['relationships']) {
+          node.relationships = update.updates['relationships'];
         }
       }
 
@@ -666,7 +836,7 @@ export class KnowledgeLearningLayer extends EventEmitter implements IKnowledgeLe
       // Validate updated knowledge
       if (this._config.knowledgeValidationEnabled) {
         const validation = await this.validateKnowledge(knowledgeId);
-        if (!validation.valid) {
+        if (!validation.isValid) {
           this.emit('validation_failed_after_update', validation);
         }
       }
@@ -770,20 +940,21 @@ export class KnowledgeLearningLayer extends EventEmitter implements IKnowledgeLe
       const formattedData = await this.formatExportData(exportData, format);
 
       return {
-        format: format as 'json' | 'xml' | 'graphml',
-        data: formattedData,
-        metadata: {
+        id: this.generateId(),
+        format: format.type as 'json' | 'xml' | 'graphml',
+        content: formattedData,
+        metadata: { id: this.generateId(),
           exportedAt: Date.now(),
           nodeCount: this._knowledge.nodes.length,
           edgeCount: this._knowledge.edges.length,
-          format,
-          version: '1.0'
-        },
-        statistics: {
-          totalNodes: this._knowledge.nodes.length,
-          totalEdges: this._knowledge.edges.length,
-          categories: await this.getCategoryStatistics(),
-          lastUpdated: this._knowledge.properties.updatedAt
+          format: format.type,
+          version: '1.0',
+          statistics: {
+            totalNodes: this._knowledge.nodes.length,
+            totalEdges: this._knowledge.edges.length,
+            categories: await this.getCategoryStatistics(),
+            lastUpdated: this._knowledge.properties.updatedAt
+          }
         },
         timestamp: Date.now()
       };
@@ -907,7 +1078,7 @@ export class KnowledgeLearningLayer extends EventEmitter implements IKnowledgeLe
         indexingStrategy: 'semantic'
       },
       reasoningEngine: {
-        type: 'graph_based',
+        algorithm: 'graph_based',
         maxDepth: 5,
         timeout: 30000,
         confidenceThreshold: 0.7,
@@ -948,30 +1119,35 @@ export class KnowledgeLearningLayer extends EventEmitter implements IKnowledgeLe
         updatedAt: Date.now()
       },
       statistics: {
+        id: this.generateId(),
         nodes: 0,
         edges: 0,
         density: 0,
-        connectedComponents: 0
+        averageDegree: 0,
+        clusteringCoefficient: 0
       }
     };
   }
 
   private initializeReasoningEngine(): ReasoningEngine {
     return {
-      type: 'graph_based',
-      maxDepth: 5,
-      timeout: 30000,
-      confidenceThreshold: 0.7,
-      evidenceRequirements: {
-        minimumReliability: 0.6,
-        minimumRelevance: 0.7,
-        maximumAge: 365,
-        requiredTypes: ['empirical', 'theoretical']
-      },
-      cache: {
-        enabled: true,
-        maxSize: 1000,
-        ttl: 300000
+      id: this.generateId(),
+      type: 'hybrid',
+      parameters: {
+        maxDepth: 5,
+        timeout: 30000,
+        confidenceThreshold: 0.7,
+        evidenceRequirements: {
+          minimumReliability: 0.6,
+          minimumRelevance: 0.7,
+          maximumAge: 365,
+          requiredTypes: ['empirical', 'theoretical']
+        },
+        cache: {
+          enabled: true,
+          maxSize: 1000,
+          ttl: 300000
+        }
       }
     };
   }
@@ -1100,6 +1276,7 @@ export class KnowledgeLearningLayer extends EventEmitter implements IKnowledgeLe
         id: this.generateId(),
         knowledgeId: nodeId,
         isValid: false,
+        passed: false,
         issues: ['Node not found'],
         confidence: 0,
         timestamp: Date.now()
@@ -1111,6 +1288,7 @@ export class KnowledgeLearningLayer extends EventEmitter implements IKnowledgeLe
     );
 
     const isValid = results.every(result => result.isValid);
+    const passed = isValid;
     const issues = results.filter(result => !result.isValid).flatMap(result => result.issues);
     const confidence = isValid ? 1.0 : 0.5;
 
@@ -1118,19 +1296,21 @@ export class KnowledgeLearningLayer extends EventEmitter implements IKnowledgeLe
       id: this.generateId(),
       knowledgeId: nodeId,
       isValid,
+      passed,
       issues,
       confidence,
       timestamp: Date.now()
     };
   }
 
-  private async applyValidationRule(node: any, rule: ValidationRule): Promise<ValidationResult> {
+  private async applyValidationRule(node: KnowledgeNode, rule: ValidationRule): Promise<ValidationResult> {
     try {
       const isValid = rule.validator(node);
       return {
         id: this.generateId(),
         knowledgeId: node.id,
         isValid,
+        passed: isValid,
         issues: isValid ? [] : [rule.description],
         confidence: isValid ? 1.0 : 0.0,
         timestamp: Date.now()
@@ -1140,6 +1320,7 @@ export class KnowledgeLearningLayer extends EventEmitter implements IKnowledgeLe
         id: this.generateId(),
         knowledgeId: node.id,
         isValid: false,
+        passed: false,
         issues: [rule.description + ': ' + (error as Error).message],
         confidence: 0.0,
         timestamp: Date.now()
@@ -1157,9 +1338,9 @@ export class KnowledgeLearningLayer extends EventEmitter implements IKnowledgeLe
     }
   }
 
-  private validateRelationshipConsistency(node: any): boolean {
+  private validateRelationshipConsistency(node: NodeData): boolean {
     // Validate relationship consistency
-    return node.relationships.every(relId =>
+    return node.relationships.every((relId: string) =>
       this._knowledge.edges.some(edge => edge.id === relId)
     );
   }
@@ -1175,7 +1356,7 @@ export class KnowledgeLearningLayer extends EventEmitter implements IKnowledgeLe
   /**
    * Calculate generalization quality
    */
-  private calculateGeneralizationQuality(analysis: any): number {
+  private calculateGeneralizationQuality(analysis: GeneralizationAnalysis): number {
     // Implementation placeholder
     return 0.5;
   }
@@ -1210,22 +1391,22 @@ export class KnowledgeLearningLayer extends EventEmitter implements IKnowledgeLe
   }
 
   // Placeholder implementations for complex methods
-  private async extractEntities(source: DataSource): Promise<any[]> {
+  private async extractEntities(source: DataSource): Promise<unknown[]> {
     // Extract entities from data source
     return [];
   }
 
-  private async extractRelationships(source: DataSource): Promise<any[]> {
+  private async extractRelationships(source: DataSource): Promise<unknown[]> {
     // Extract relationships from data source
     return [];
   }
 
-  private async extractPatterns(source: DataSource): Promise<any[]> {
+  private async extractPatterns(source: DataSource): Promise<unknown[]> {
     // Extract patterns from data source
     return [];
   }
 
-  private async createKnowledgeItemsFromExtraction(entities: any[], relationships: any[], patterns: any[]): Promise<KnowledgeItem[]> {
+  private async createKnowledgeItemsFromExtraction(entities: NodeData[], relationships: unknown[], patterns: Pattern[]): Promise<KnowledgeItem[]> {
     // Create knowledge items from extraction results
     return [];
   }
@@ -1241,7 +1422,7 @@ export class KnowledgeLearningLayer extends EventEmitter implements IKnowledgeLe
   /**
    * Prepare export data
    */
-  private async prepareExportData(): Promise<any> {
+  private async prepareExportData(): Promise<ConfigObject> {
     // Implementation placeholder
     return {
       nodes: this._knowledge.nodes,
@@ -1252,7 +1433,7 @@ export class KnowledgeLearningLayer extends EventEmitter implements IKnowledgeLe
   /**
    * Format export data
    */
-  private async formatExportData(data: any, format: ExportFormat): Promise<any> {
+  private async formatExportData(data: Content, format: ExportFormat): Promise<unknown> {
     // Implementation placeholder
     return JSON.stringify(data);
   }
@@ -1268,14 +1449,14 @@ export class KnowledgeLearningLayer extends EventEmitter implements IKnowledgeLe
   /**
    * Validate import data
    */
-  private validateImportData(data: any): void {
+  private validateImportData(data: Content): void {
     // Implementation placeholder
   }
 
   /**
    * Parse import data
    */
-  private async parseImportData(data: any): Promise<any> {
+  private async parseImportData(data: Content): Promise<KnowledgeNode[]> {
     // Implementation placeholder
     return { nodes: [], relationships: [] };
   }
@@ -1283,7 +1464,7 @@ export class KnowledgeLearningLayer extends EventEmitter implements IKnowledgeLe
   /**
    * Connect to knowledge source
    */
-  private async connectToKnowledgeSource(source: KnowledgeSource): Promise<any> {
+  private async connectToKnowledgeSource(source: KnowledgeSource): Promise<ConfigObject> {
     // Implementation placeholder
     return {};
   }
@@ -1291,7 +1472,7 @@ export class KnowledgeLearningLayer extends EventEmitter implements IKnowledgeLe
   /**
    * Fetch knowledge updates
    */
-  private async fetchKnowledgeUpdates(connection: any, source: KnowledgeSource): Promise<any[]> {
+  private async fetchKnowledgeUpdates(connection: ConfigObject, source: KnowledgeSource): Promise<unknown[]> {
     // Implementation placeholder
     return [];
   }
@@ -1311,21 +1492,21 @@ export class KnowledgeLearningLayer extends EventEmitter implements IKnowledgeLe
   /**
    * Analyze patterns for generalization
    */
-  private async analyzePatternsForGeneralization(patterns: KnowledgePattern[]): Promise<any> {
+  private async analyzePatternsForGeneralization(patterns: KnowledgePattern[]): Promise<Generalization> {
     return patterns;
   }
 
   /**
    * Extract general rules from patterns
    */
-  private async extractGeneralRules(analysis: any): Promise<any[]> {
+  private async extractGeneralRules(analysis: ConfigObject): Promise<unknown[]> {
     return [];
   }
 
   /**
    * Create generalized knowledge items
    */
-  private async createGeneralizedKnowledgeItems(rules: any[]): Promise<KnowledgeItem[]> {
+  private async createGeneralizedKnowledgeItems(rules: Pattern[]): Promise<KnowledgeItem[]> {
     return [];
   }
 
@@ -1339,7 +1520,7 @@ export class KnowledgeLearningLayer extends EventEmitter implements IKnowledgeLe
   /**
    * Analyze pruning impact
    */
-  private async analyzePruningImpact(candidates: KnowledgeNode[]): Promise<any> {
+  private async analyzePruningImpact(candidates: KnowledgeNode[]): Promise<RiskAssessment> {
     return {};
   }
 
@@ -1348,5 +1529,202 @@ export class KnowledgeLearningLayer extends EventEmitter implements IKnowledgeLe
    */
   private async performPruning(candidates: KnowledgeNode[], criteria: PruningCriteria): Promise<KnowledgeNode[]> {
     return [];
+  }
+
+  /**
+   * Categorize unorganized knowledge
+   * 分类未组织的知识
+   */
+  private async categorizeUnorganizedKnowledge(): Promise<number> {
+    let categorizedCount = 0;
+
+    for (const node of this._knowledge.nodes) {
+      if (!node.properties.categories || node.properties.categories.length === 0) {
+        const analysis = await this.analyzeKnowledgeContent(node.id);
+        const categories = await this.determineCategories(node.id);
+        
+        node.properties.categories = categories;
+        categorizedCount++;
+        
+        this._metrics.categorizedItems++;
+      }
+    }
+
+    return categorizedCount;
+  }
+
+  /**
+   * Link related knowledge
+   * 链接相关知识
+   */
+  private async linkRelatedKnowledge(): Promise<number> {
+    let linksCreated = 0;
+
+    for (let i = 0; i < this._knowledge.nodes.length; i++) {
+      const nodeA = this._knowledge.nodes[i];
+      
+      if (!nodeA) continue;
+      
+      for (let j = i + 1; j < this._knowledge.nodes.length; j++) {
+        const nodeB = this._knowledge.nodes[j];
+        
+        if (!nodeB) continue;
+        
+        const similarity = await this.calculateKnowledgeSimilarity(nodeA, nodeB);
+        
+        if (similarity > 0.7) {
+          const link: KnowledgeLink = {
+
+            sourceId: nodeA.id,
+            targetId: nodeB.id,
+            type: 'related',
+            weight: similarity,
+            timestamp: Date.now(),
+            properties: {
+              similarity,
+              createdAt: Date.now()
+            }
+          };
+          
+          await this.linkKnowledge(link);
+          linksCreated++;
+        }
+      }
+    }
+
+    return linksCreated;
+  }
+
+  /**
+   * Optimize knowledge graph structure
+   * 优化知识图谱结构
+   */
+  async optimizeKnowledgeGraphStructure(): Promise<void> {
+    let optimizations = 0;
+
+    const nodesToOptimize = [...this._knowledge.nodes];
+    
+    for (const node of nodesToOptimize) {
+      const edges = this._knowledge.edges.filter(
+        edge => edge.source === node.id || edge.target === node.id
+      );
+      
+      if (edges.length > 10) {
+        edges.sort((a, b) => b.weight - a.weight);
+        
+        const weakEdges = edges.slice(10);
+        
+        for (const edge of weakEdges) {
+          const index = this._knowledge.edges.findIndex(e => e.id === edge.id);
+          if (index !== -1) {
+            this._knowledge.edges.splice(index, 1);
+            
+            const sourceNode = this._knowledge.nodes.find(n => n.id === edge.source);
+            const targetNode = this._knowledge.nodes.find(n => n.id === edge.target);
+            
+            if (sourceNode) {
+              sourceNode.relationships = sourceNode.relationships.filter(r => r !== edge.id);
+            }
+            if (targetNode) {
+              targetNode.relationships = targetNode.relationships.filter(r => r !== edge.id);
+            }
+            
+            optimizations++;
+          }
+        }
+      }
+    }
+
+    this._metrics.knowledgeEdges = this._knowledge.edges.length;
+  }
+
+  /**
+   * Calculate knowledge similarity
+   * 计算知识相似度
+   */
+  private async calculateKnowledgeSimilarity(nodeA: KnowledgeNode, nodeB: KnowledgeNode): Promise<number> {
+    if (!nodeA.content || !nodeB.content) {
+      return 0;
+    }
+
+    const contentA = JSON.stringify(nodeA.content).toLowerCase();
+    const contentB = JSON.stringify(nodeB.content).toLowerCase();
+
+    const keywordsA = this.extractKeywordsFromContent(contentA);
+    const keywordsB = this.extractKeywordsFromContent(contentB);
+
+    const intersection = keywordsA.filter(k => keywordsB.includes(k));
+    const union = [...new Set([...keywordsA, ...keywordsB])];
+
+    if (union.length === 0) {
+      return 0;
+    }
+
+    return intersection.length / union.length;
+  }
+
+  /**
+   * Extract keywords from content
+   * 从内容中提取关键词
+   */
+  private extractKeywordsFromContent(content: string): string[] {
+    const words = content.split(/\s+/).filter(word => word.length > 3);
+    return [...new Set(words)];
+  }
+
+  /**
+   * Analyze knowledge content
+   * 分析知识内容
+   */
+  public async analyzeKnowledgeContent(knowledgeId: string): Promise<Content> {
+    const node = this._knowledge.nodes.find(n => n.id === knowledgeId);
+    
+    if (!node || !node.content) {
+      return { confidence: 0, keywords: [] };
+    }
+
+    const content = JSON.stringify(node.content).toLowerCase();
+    const keywords = this.extractKeywordsFromContent(content);
+    
+    const confidence = Math.min(1, keywords.length / 10);
+
+    return { confidence, keywords };
+  }
+
+  /**
+   * Determine categories for knowledge
+   * 确定知识的分类
+   */
+  public async determineCategories(knowledgeId: string): Promise<string[]> {
+    const analysis = await this.analyzeKnowledgeContent(knowledgeId);
+    const categories: string[] = [];
+
+    if (analysis.keywords && analysis.keywords.some((k: string) => ['data', 'information', 'knowledge'].includes(k))) {
+      categories.push('data');
+    }
+    if (analysis.keywords && analysis.keywords.some((k: string) => ['reason', 'logic', 'inference', 'deduction'].includes(k))) {
+      categories.push('reasoning');
+    }
+    if (analysis.keywords && analysis.keywords.some((k: string) => ['pattern', 'rule', 'generalization'].includes(k))) {
+      categories.push('pattern');
+    }
+    if (analysis.keywords.some((k: string) => ['entity', 'object', 'concept'].includes(k))) {
+      categories.push('entity');
+    }
+
+    if (categories.length === 0) {
+      categories.push('general');
+    }
+
+    return categories;
+  }
+
+  // Event handling
+  override on(event: 'knowledge', listener: (knowledge: KnowledgeItem) => void): this;
+  override on(event: 'reasoning', listener: (result: ReasoningResult) => void): this;
+  override on(event: 'generalization', listener: (result: GeneralizationResult) => void): this;
+  override on(event: 'error', listener: (error: Error) => void): this;
+  override on(event: string, listener: EventListener): this {
+    return super.on(event, listener);
   }
 }

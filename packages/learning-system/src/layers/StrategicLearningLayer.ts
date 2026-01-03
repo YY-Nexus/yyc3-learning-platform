@@ -32,6 +32,15 @@ import {
   StrategyMetrics,
   StrategyUpdate
 } from '../ILearningSystem';
+import type {
+  ConfigObject,
+  Recommendation,
+  RiskAssessment,
+  StrategyEfficiency,
+  PlanEffectiveness,
+  LearningInsight,
+  EventListener
+} from '../types/common.types';
 
 /**
  * Strategic Learning Layer implementation
@@ -731,7 +740,7 @@ export class StrategicLearningLayer extends EventEmitter implements IStrategicLe
       const lessons = await this.identifyPlanLessons(plan, performanceData);
 
       // First generate recommendations without using evaluation
-      const recommendations: any[] = [];
+      const recommendations: Recommendation[] = [];
 
       const evaluation: PlanEvaluation = {
         id: this.generateId(),
@@ -887,7 +896,7 @@ export class StrategicLearningLayer extends EventEmitter implements IStrategicLe
   }
 
   private requiresReevaluation(updates: StrategyUpdate): boolean {
-    return !!(updates.updates.objectives || updates.updates.tactics || updates.updates.resources);
+    return !!(updates.updates['objectives'] || updates.updates['tactics'] || updates.updates['resources']);
   }
 
   // Placeholder implementations for complex methods
@@ -895,48 +904,48 @@ export class StrategicLearningLayer extends EventEmitter implements IStrategicLe
     // Implement feasibility evaluation
   }
 
-  private async collectStrategyPerformanceData(strategyId: string): Promise<any> {
+  private async collectStrategyPerformanceData(strategyId: string): Promise<Record<string, unknown>> {
     // Collect performance data for strategy
     return {};
   }
 
-  private async calculateStrategyEffectiveness(strategy: Strategy, data: any): Promise<number> {
+  private async calculateStrategyEffectiveness(strategy: Strategy, data: Record<string, unknown>): Promise<number> {
     // Calculate strategy effectiveness
     return 0.8;
   }
 
-  private async calculateStrategyEfficiency(strategy: Strategy, data: any): Promise<number> {
+  private async calculateStrategyEfficiency(strategy: Strategy, data: ConfigObject): Promise<number> {
     // Calculate strategy efficiency
     return 0.75;
   }
 
-  private async assessStrategySustainability(strategy: Strategy, data: any): Promise<number> {
+  private async assessStrategySustainability(strategy: Strategy, data: ConfigObject): Promise<number> {
     // Assess strategy sustainability
     return 0.7;
   }
 
-  private async evaluateStrategyRisks(strategy: Strategy, data: any): Promise<any> {
+  private async evaluateStrategyRisks(strategy: Strategy, data: ConfigObject): Promise<RiskAssessment> {
     // Evaluate strategy risks
     return { overall: 0.3, categories: [] };
   }
 
-  private async generateStrategyRecommendations(strategy: Strategy, data: any): Promise<any[]> {
+  private async generateStrategyRecommendations(strategy: Strategy, data: ConfigObject): Promise<Recommendation[]> {
     // Generate strategy recommendations
     return [];
   }
 
-  private async generateNextActions(strategy: Strategy, data: any): Promise<any[]> {
+  private async generateNextActions(strategy: Strategy, data: ConfigObject): Promise<LearningInsight[]> {
     // Generate next actions for strategy
     return [];
   }
 
   // Missing method implementations
-  private async calculatePlanEffectiveness(plan: StrategicPlan, data: any): Promise<number> {
+  private async calculatePlanEffectiveness(plan: StrategicPlan, data: ConfigObject): Promise<number> {
     // Calculate plan effectiveness
     return 0.85;
   }
 
-  private async assessPlanEfficiency(plan: StrategicPlan, data: any): Promise<number> {
+  private async assessPlanEfficiency(plan: StrategicPlan, data: ConfigObject): Promise<number> {
     // Assess plan efficiency
     return 0.78;
   }
@@ -946,7 +955,7 @@ export class StrategicLearningLayer extends EventEmitter implements IStrategicLe
     return 0.82;
   }
 
-  private async identifyPlanLessons(plan: StrategicPlan, data: any): Promise<any[]> {
+  private async identifyPlanLessons(plan: StrategicPlan, data: ConfigObject): Promise<LearningInsight[]> {
     // Identify plan lessons learned
     return [];
   }
@@ -960,19 +969,19 @@ export class StrategicLearningLayer extends EventEmitter implements IStrategicLe
     return [];
   }
 
-  private async applyStrategyOptimizations(strategy: Strategy, opportunities: any[]): Promise<any[]> {
+  private async applyStrategyOptimizations(strategy: Strategy, opportunities: LearningInsight[]): Promise<Recommendation[]> {
     // Apply strategy optimizations
     return [];
   }
 
-  private async validateOptimizations(strategy: Strategy, optimizations: any[]): Promise<any> {
+  private async validateOptimizations(strategy: Strategy, optimizations: Recommendation[]): Promise<ValidationResult> {
     // Validate optimizations
     return { success: true, performanceGain: 0.1 };
   }
 
   private calculateGoalProgress(goal: StrategicGoal): GoalProgress {
     // Check if both currentValue and targetValue are available and numeric
-    const isNumeric = (value: any): value is number => typeof value === 'number' && isFinite(value);
+    const isNumeric = (value: unknown): value is number => typeof value === 'number' && isFinite(value);
     const currentValue = isNumeric(goal.currentValue) ? goal.currentValue : 0;
 
     // Handle targetValue which might be an object or number
@@ -1037,7 +1046,7 @@ export class StrategicLearningLayer extends EventEmitter implements IStrategicLe
     return context.availableOptions || [];
   }
 
-  private async evaluateDecisionOptions(context: DecisionContext, options: any[]): Promise<any[]> {
+  private async gevaluateDecisionOptions(context: DecisionContext, options: ConfigObject[]): Promise<Recommendation[]> {
     // Evaluate decision options
     return options.map(option => ({
       ...option,
@@ -1045,18 +1054,18 @@ export class StrategicLearningLayer extends EventEmitter implements IStrategicLe
     }));
   }
 
-  private calculateOptionScore(context: DecisionContext, option: any): number {
+  private calculateOptionScore(context: DecisionContext, option: ConfigObject): number {
     // Calculate option score
     return 0.7;
   }
 
-  private async selectBestOption(context: DecisionContext, options: any[]): Promise<any> {
+  private async selectBestOption(context: DecisionContext, options: ConfigObject[]): Promise<ConfigObject> {
     // Select best option
     return options.reduce((best, current) =>
       current.score > best.score ? current : best, options[0]);
   }
 
-  private async generateDecisionReasoning(context: DecisionContext, option: any, allOptions: any[]): Promise<any> {
+  private async generateDecisionReasoning(context: DecisionContext, option: ConfigObject, allOptions: ConfigObject[]): Promise<LearningInsight> {
     // Generate decision reasoning
     return {
       rationale: `Selected option with highest score: ${option.score}`,
@@ -1065,7 +1074,7 @@ export class StrategicLearningLayer extends EventEmitter implements IStrategicLe
     };
   }
 
-  private calculateDecisionConfidence(selectedOption: any, allOptions: any[]): number {
+  private calculateDecisionConfidence(selectedOption: ConfigObject, allOptions: ConfigObject[]): number {
     const scores = allOptions.map(opt => opt.score);
     const maxScore = Math.max(...scores);
     const minScore = Math.min(...scores);
@@ -1073,12 +1082,12 @@ export class StrategicLearningLayer extends EventEmitter implements IStrategicLe
     return range > 0 ? (selectedOption.score - minScore) / range : 0.5;
   }
 
-  private async calculateExpectedOutcomes(option: any): Promise<any[]> {
+  private async calculateExpectedOutcomes(option: ConfigObject): Promise<ConfigObject[]> {
     // Calculate expected outcomes
     return option.expectedOutcomes || [];
   }
 
-  private async assessDecisionRisks(option: any, context: DecisionContext): Promise<any[]> {
+  private async assessDecisionRisks(option: ConfigObject, context: DecisionContext): Promise<RiskAssessment[]> {
     // Assess decision risks
     return option.risks || [];
   }
@@ -1108,7 +1117,7 @@ export class StrategicLearningLayer extends EventEmitter implements IStrategicLe
     };
   }
 
-  private async generateDecisionRecommendations(decision: StrategicDecision, learningPoints: any[]): Promise<any[]> {
+  private async generateDecisionRecommendations(decision: StrategicDecision, learningPoints: LearningInsight[]): Promise<Recommendation[]> {
     // Generate decision recommendations
     return [];
   }
@@ -1125,17 +1134,17 @@ export class StrategicLearningLayer extends EventEmitter implements IStrategicLe
     // Update decision outcome metrics
   }
 
-  private async getCurrentResourceRequirements(): Promise<any> {
+  private async getCurrentResourceRequirements(): Promise<ConfigObject> {
     // Get current resource requirements
     return { compute: 100, memory: 50, storage: 20, network: 10 };
   }
 
-  private async getAvailableResources(): Promise<any> {
+  private async getAvailableResources(): Promise<ConfigObject> {
     // Get available resources
     return { compute: 200, memory: 100, storage: 50, network: 25 };
   }
 
-  private async calculateOptimalAllocation(requirements: any, available: any): Promise<ResourceAllocation> {
+  private async calculateOptimalAllocation(requirements: ConfigObject, available: ConfigObject): Promise<ResourceAllocation> {
     // Calculate optimal resource allocation
     return {
       id: this.generateId(),
@@ -1161,22 +1170,22 @@ export class StrategicLearningLayer extends EventEmitter implements IStrategicLe
     }));
   }
 
-  private async getCurrentResourceUsage(): Promise<any> {
+  private async getCurrentResourceUsage(): Promise<ConfigObject> {
     // Get current resource usage
     return { compute: 80, memory: 40, storage: 15, network: 8 };
   }
 
-  private async analyzeResourceTrends(timeHorizon: number): Promise<any> {
+  private async analyzeResourceTrends(timeHorizon: number): Promise<ConfigObject[]> {
     // Analyze resource trends
     return { trend: 'increasing', growthRate: 0.1 };
   }
 
-  private async calculateStrategicResourceNeeds(timeHorizon: number): Promise<any> {
+  private async calculateStrategicResourceNeeds(timeHorizon: number): Promise<ConfigObject> {
     // Calculate strategic resource needs
     return { compute: 120, memory: 60, storage: 25, network: 15 };
   }
 
-  private async generateResourcePrediction(current: any, trends: any, strategic: any, timeHorizon: number): Promise<ResourcePrediction> {
+  private async generateResourcePrediction(current: ConfigObject, trends: ConfigObject, strategic: ConfigObject, timeHorizon: number): Promise<ResourcePrediction> {
     // Generate resource prediction
     return {
       id: this.generateId(),
@@ -1204,12 +1213,12 @@ export class StrategicLearningLayer extends EventEmitter implements IStrategicLe
   }
 
   // 缺失方法实现
-  private async analyzeCurrentSituation(): Promise<any> {
+  private async analyzeCurrentSituation(): Promise<ConfigObject> {
     // Analyze current situation
     return {};
   }
 
-  private async definePlanObjectives(situationAnalysis: any): Promise<StrategicGoal[]> {
+  private async definePlanObjectives(situationAnalysis: ConfigObject): Promise<StrategicGoal[]> {
     // Define plan objectives
     return Array.from(this._goals.values());
   }
@@ -1259,9 +1268,31 @@ export class StrategicLearningLayer extends EventEmitter implements IStrategicLe
     // Update dependent strategies
   }
 
-  private async collectPlanPerformanceData(plan: StrategicPlan): Promise<any> {
+  private async collectPlanPerformanceData(plan: StrategicPlan): Promise<PlanEffectiveness> {
     // Collect plan performance data
     return {};
+  }
+
+  /**
+   * Learn from experience
+   * 从经验中学习
+   */
+  async learnFromExperience(experience: ConfigObject): Promise<LearningInsight> {
+    // Implement learning from experience
+    return {
+      id: this.generateId(),
+      timestamp: Date.now(),
+      learned: true
+    };
+  }
+
+  // Event handling
+  override on(event: 'strategy', listener: (strategy: Strategy) => void): this;
+  override on(event: 'goal', listener: (goal: StrategicGoal) => void): this;
+  override on(event: 'decision', listener: (decision: StrategicDecision) => void): this;
+  override on(event: 'error', listener: (error: Error) => void): this;
+  override on(event: string, listener: EventListener): this {
+    return super.on(event, listener);
   }
 }
 

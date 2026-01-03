@@ -5,9 +5,9 @@
  */
 
 import { EventEmitter } from 'events';
-import { EnterpriseAIEngine } from '@yyc3/ai-engine';
-import { EnterpriseDataService } from '@yyc3/data-service';
-import { createLogger } from '@yyc3/ai-engine/src/utils/logger';
+import { EnterpriseAIEngine } from '../../yyc3-ai-engine/src/EnterpriseAIEngine';
+import { EnterpriseDataService } from '../../yyc3-data-service/src/EnterpriseDataService';
+import { createLogger } from '../../yyc3-ai-engine/src/utils/logger';
 
 const logger = createLogger('EnterpriseGateway');
 

@@ -15,7 +15,7 @@ import helmet from 'helmet';
 import rateLimit from 'express-rate-limit';
 import { EventDispatcher, eventDispatcher } from '@/packages/core-engine/src/EventDispatcher';
 import { SecurityManager } from '@/packages/core-engine/src/SecurityManager';
-import { createLogger } from '../../lib/logger';
+import { createLogger } from '../../../lib/logger';
 
 const logger = createLogger('DataService');
 

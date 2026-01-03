@@ -26,7 +26,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           setUser(JSON.parse(savedUser))
         }
       } catch (error) {
-        logger.error("检查认证状态失败", error)
+        console.error("检查认证状态失败", error)
       } finally {
         setLoading(false)
       }
@@ -49,6 +49,45 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         studyDays: 77,
         completedCourses: 12,
         studyHours: 156,
+        level: "beginner",
+        points: 1500,
+        streak: 15,
+        joinDate: "2024-01-15",
+        certificates: 3,
+        rank: 42,
+        profile: {
+          bio: "",
+          location: "",
+          website: "",
+          github: "",
+          linkedin: ""
+        },
+        learningStats: {
+          totalCourses: 15,
+          completedCourses: 12,
+          totalHours: 156,
+          currentStreak: 15,
+          longestStreak: 30,
+          averageScore: 85.5
+        },
+        enrolledCourses: [],
+        achievements: [],
+        preferences: {
+          language: "zh-CN",
+          timezone: "Asia/Shanghai",
+          emailNotifications: true,
+          pushNotifications: true,
+          weeklyReport: true,
+          theme: "system",
+          learningReminder: {
+            enabled: true,
+            time: "09:00",
+            days: ["周一", "周二", "周三", "周四", "周五"]
+          },
+          notifications: true,
+          emailUpdates: true
+        },
+        progress: {}
       }
 
       setUser(mockUser)

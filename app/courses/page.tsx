@@ -36,14 +36,14 @@ export default function CoursesPage() {
   const [selectedLevel, setSelectedLevel] = useState("全部")
   const [selectedTab, setSelectedTab] = useState("推荐")
   const [isFilterOpen, setIsFilterOpen] = useState(false)
-  const [favorites, setFavorites] = useState<number[]>([])
+  const [favorites, setFavorites] = useState<string[]>([])
 
   // 模拟加载收藏数据
   useEffect(() => {
-    setFavorites([2, 5, 8])
+    setFavorites(["2", "5", "8"])
   }, [])
 
-  const toggleFavorite = (courseId: number) => {
+  const toggleFavorite = (courseId: string) => {
     setFavorites((prev) => (prev.includes(courseId) ? prev.filter((id) => id !== courseId) : [...prev, courseId]))
   }
 

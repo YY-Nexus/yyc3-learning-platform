@@ -18,17 +18,17 @@ import {
   DimensionType,
   AlertLevel,
   Priority
-} from '@/types/IFiveDimensionalManagement';
-import { GoalDimension } from '@/dimensions/GoalDimension';
-import { TechnologyDimension } from '@/dimensions/TechnologyDimension';
-import { DataDimension } from '@/dimensions/DataDimension';
-import { UXDimension } from '@/dimensions/UXDimension';
-import { ValueDimension } from '@/dimensions/ValueDimension';
-import { MetricsCollector } from '@/monitoring/MetricsCollector';
-import { AlertManager } from '@/monitoring/AlertManager';
-import { RecommendationEngine } from '@/core/RecommendationEngine';
-import { ReportGenerator } from '@/core/ReportGenerator';
-import { Logger } from '@/utils/Logger';
+} from '../types/IFiveDimensionalManagement';
+import { GoalDimension } from '../dimensions/GoalDimension';
+import { TechnologyDimension } from '../dimensions/TechnologyDimension';
+import { DataDimension } from '../dimensions/DataDimension';
+import { UXDimension } from '../dimensions/UXDimension';
+import { ValueDimension } from '../dimensions/ValueDimension';
+import { MetricsCollector } from '../monitoring/MetricsCollector';
+import { AlertManager } from '../monitoring/AlertManager';
+import { RecommendationEngine } from './RecommendationEngine';
+import { ReportGenerator } from './ReportGenerator';
+import { Logger } from '../utils/Logger';
 
 /**
  * Five-Dimensional Closed-Loop Management System

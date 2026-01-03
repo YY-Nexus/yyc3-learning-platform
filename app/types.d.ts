@@ -30,6 +30,7 @@ export interface Course {
   instructor?: string
   rating?: number
   students?: number
+  isEnrolled?: boolean
 }
 
 // 用户相关类型

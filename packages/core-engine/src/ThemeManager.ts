@@ -16,7 +16,7 @@
  */
 
 import { EventEmitter } from 'events';
-import { createLogger } from '../../../lib/logger';
+import { createLogger } from './utils/logger';
 
 const logger = createLogger('ThemeManager');
 

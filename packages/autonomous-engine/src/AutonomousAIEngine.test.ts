@@ -724,7 +724,7 @@ describe('AutonomousAIEngine', () => {
       let totalUsedNetwork = 0;
 
       // Calculate real allocated resources from allocations
-      const allocations = Array.from((mockResourceManager as any).allocations.values());
+      const allocations = Array.from((mockResourceManager as any).allocations.values()) as ResourceAllocation[];
       for (const allocation of allocations) {
         const cpuResource = allocation.resources.find((r: any) => r.type === 'cpu');
         const memoryResource = allocation.resources.find((r: any) => r.type === 'memory');
@@ -1083,7 +1083,7 @@ describe('AutonomousAIEngine', () => {
         specialized: []
       };
 
-      const allocation = await resourceManager.allocateResources(testRequirements);
+      const allocation = await resourceManager.allocateResources(testRequirements) as ResourceAllocation;
 
       // Verify allocation properties
       expect(allocation).toHaveProperty('id');
@@ -1142,7 +1142,7 @@ describe('AutonomousAIEngine', () => {
       };
 
       // Allocate resources first
-      const allocation = await resourceManager.allocateResources(testRequirements);
+      const allocation = await resourceManager.allocateResources(testRequirements) as ResourceAllocation;
       const allocationId = allocation.id;
 
       // Verify allocation exists
@@ -1204,7 +1204,7 @@ describe('AutonomousAIEngine', () => {
       };
 
       // Allocate resources
-      const allocation = await resourceManager.allocateResources(testRequirements);
+      const allocation = await resourceManager.allocateResources(testRequirements) as ResourceAllocation;
 
       // Modify resource utilization for testing
       allocation.resources.forEach((resource: any) => {
@@ -3030,7 +3030,13 @@ describe('AutonomousAIEngine', () => {
     });
 
     it('should get resource utilization', () => {
-      const mockUtilization = { cpu: 50, memory: 60 };
+      const mockUtilization = { 
+        cpu: { allocated: 50, used: 30, available: 20, efficiency: 0.6, fragmentation: 0.1 },
+        memory: { allocated: 60, used: 40, available: 20, efficiency: 0.7, fragmentation: 0.1 },
+        storage: { allocated: 70, used: 50, available: 20, efficiency: 0.8, fragmentation: 0.1 },
+        network: { allocated: 80, used: 60, available: 20, efficiency: 0.9, fragmentation: 0.1 },
+        specialized: []
+      };
       mockResourceManager.getResourceUtilization.mockReturnValue(mockUtilization);
 
       const result = engine.getResourceUtilization();
@@ -3039,7 +3045,7 @@ describe('AutonomousAIEngine', () => {
     });
 
     it('should get current usage', () => {
-      const mockUsage = { cpu: 30, memory: 40 };
+      const mockUsage = { cpu: 30, memory: 40, storage: 50, network: 60, specialized: {} };
       mockResourceManager.getCurrentUsage.mockReturnValue(mockUsage);
 
       const result = engine.getCurrentUsage();
@@ -4768,10 +4774,86 @@ describe('AutonomousAIEngine', () => {
     it('should get task criticality correctly', async () => {
       const engine = await createAutonomousEngine();
 
-      const criticalTask = { priority: 'critical', requirements: { cpu: { min: 2, unit: 'cores' }, memory: { min: 1024, unit: 'MB' }, storage: { min: 1, unit: 'GB' }, network: { min: 100, unit: 'Mbps' }, specialized: [] } } as Task;
-      const highTask = { priority: 'high', requirements: { cpu: { min: 1, unit: 'cores' }, memory: { min: 512, unit: 'MB' }, storage: { min: 1, unit: 'GB' }, network: { min: 50, unit: 'Mbps' }, specialized: [] } } as Task;
-      const mediumTask = { priority: 'medium', requirements: { cpu: { min: 1, unit: 'cores' }, memory: { min: 256, unit: 'MB' }, storage: { min: 1, unit: 'GB' }, network: { min: 10, unit: 'Mbps' }, specialized: [] } } as Task;
-      const lowTask = { priority: 'low', requirements: { cpu: { min: 0.5, unit: 'cores' }, memory: { min: 128, unit: 'MB' }, storage: { min: 0.5, unit: 'GB' }, network: { min: 1, unit: 'Mbps' }, specialized: [] } } as Task;
+      const criticalTask = { 
+        id: 'task-critical',
+        name: 'Critical Task',
+        description: 'A critical task',
+        type: 'computation' as const,
+        priority: 'critical' as const,
+        status: 'pending' as const,
+        dependencies: [],
+        requirements: { cpu: { min: 2, unit: 'cores' }, memory: { min: 1024, unit: 'MB' }, storage: { min: 1, unit: 'GB' }, network: { min: 100, unit: 'Mbps' }, specialized: [] },
+        steps: [],
+        metadata: {
+          source: 'test',
+          category: 'test',
+          tags: [],
+          retryPolicy: { maxAttempts: 3, backoffMs: 1000 },
+          timeout: 5000,
+          qualityRequirements: { accuracy: 0.95, latency: 1000, throughput: 100 }
+        },
+        createdAt: new Date()
+      } as Task;
+      const highTask = { 
+        id: 'task-high',
+        name: 'High Task',
+        description: 'A high priority task',
+        type: 'computation' as const,
+        priority: 'high' as const,
+        status: 'pending' as const,
+        dependencies: [],
+        requirements: { cpu: { min: 1, unit: 'cores' }, memory: { min: 512, unit: 'MB' }, storage: { min: 1, unit: 'GB' }, network: { min: 50, unit: 'Mbps' }, specialized: [] },
+        steps: [],
+        metadata: {
+          source: 'test',
+          category: 'test',
+          tags: [],
+          retryPolicy: { maxAttempts: 3, backoffMs: 1000 },
+          timeout: 5000,
+          qualityRequirements: { accuracy: 0.95, latency: 1000, throughput: 100 }
+        },
+        createdAt: new Date()
+      } as Task;
+      const mediumTask = { 
+        id: 'task-medium',
+        name: 'Medium Task',
+        description: 'A medium priority task',
+        type: 'computation' as const,
+        priority: 'medium' as const,
+        status: 'pending' as const,
+        dependencies: [],
+        requirements: { cpu: { min: 1, unit: 'cores' }, memory: { min: 256, unit: 'MB' }, storage: { min: 1, unit: 'GB' }, network: { min: 10, unit: 'Mbps' }, specialized: [] },
+        steps: [],
+        metadata: {
+          source: 'test',
+          category: 'test',
+          tags: [],
+          retryPolicy: { maxAttempts: 3, backoffMs: 1000 },
+          timeout: 5000,
+          qualityRequirements: { accuracy: 0.95, latency: 1000, throughput: 100 }
+        },
+        createdAt: new Date()
+      } as Task;
+      const lowTask = { 
+        id: 'task-low',
+        name: 'Low Task',
+        description: 'A low priority task',
+        type: 'computation' as const,
+        priority: 'low' as const,
+        status: 'pending' as const,
+        dependencies: [],
+        requirements: { cpu: { min: 0.5, unit: 'cores' }, memory: { min: 128, unit: 'MB' }, storage: { min: 0.5, unit: 'GB' }, network: { min: 1, unit: 'Mbps' }, specialized: [] },
+        steps: [],
+        metadata: {
+          source: 'test',
+          category: 'test',
+          tags: [],
+          retryPolicy: { maxAttempts: 3, backoffMs: 1000 },
+          timeout: 5000,
+          qualityRequirements: { accuracy: 0.95, latency: 1000, throughput: 100 }
+        },
+        createdAt: new Date()
+      } as Task;
       const defaultTask = { priority: 'unknown' } as any;
 
       expect((engine as any).getTaskCriticality(criticalTask)).toBe('critical');
@@ -5313,7 +5395,7 @@ describe('AutonomousAIEngine', () => {
         network: { min: 10, max: 100, unit: 'mbps' }
       };
 
-      const allocation = await resourceManager.allocateResources(requirements);
+      const allocation = await resourceManager.allocateResources(requirements) as ResourceAllocation;
       expect(resourceManager.allocateResources).toHaveBeenCalledWith(requirements);
       expect(allocation).toHaveProperty('id');
       expect(allocation).toHaveProperty('status', 'active');

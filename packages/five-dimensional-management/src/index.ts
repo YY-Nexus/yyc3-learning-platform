@@ -5,16 +5,19 @@
 
 // Main System Exports
 export {
-  FiveDimensionalManagement,
-  type IFiveDimensionalManagement
-} from '@/core/FiveDimensionalManagement';
+  FiveDimensionalManagement
+} from './core/FiveDimensionalManagement';
+
+export type {
+  IFiveDimensionalManagement
+} from './types/IFiveDimensionalManagement';
 
 // Dimension Exports
-export { GoalDimension } from '@/dimensions/GoalDimension';
-export { TechnologyDimension } from '@/dimensions/TechnologyDimension';
-export { DataDimension } from '@/dimensions/DataDimension';
-export { UXDimension } from '@/dimensions/UXDimension';
-export { ValueDimension } from '@/dimensions/ValueDimension';
+export { GoalDimension } from './dimensions/GoalDimension';
+export { TechnologyDimension } from './dimensions/TechnologyDimension';
+export { DataDimension } from './dimensions/DataDimension';
+export { UXDimension } from './dimensions/UXDimension';
+export { ValueDimension } from './dimensions/ValueDimension';
 
 // Type Exports
 export type {
@@ -46,31 +49,31 @@ export type {
   ExecutiveSummary,
   TrendData,
   AlertFilters
-} from '@/types/IFiveDimensionalManagement';
+} from './types/IFiveDimensionalManagement';
 
 // Utility Exports
-export { Logger, LogLevel } from '@/utils/Logger';
-export { GoalValidator } from '@/utils/GoalValidator';
+export { Logger, LogLevel } from './utils/Logger';
+export { GoalValidator } from './utils/GoalValidator';
 
 // Monitoring Exports
-export { MetricsCollector } from '@/monitoring/MetricsCollector';
-export { AlertManager } from '@/monitoring/AlertManager';
-export { SystemMonitor } from '@/monitoring/SystemMonitor';
+export { MetricsCollector } from './monitoring/MetricsCollector';
+export { AlertManager } from './monitoring/AlertManager';
+export { SystemMonitor } from './monitoring/SystemMonitor';
 
 // Core Component Exports
-export { RecommendationEngine } from '@/core/RecommendationEngine';
-export { ReportGenerator } from '@/core/ReportGenerator';
-export { GoalAnalyticsEngine } from '@/core/GoalAnalyticsEngine';
+export { RecommendationEngine } from './core/RecommendationEngine';
+export { ReportGenerator } from './core/ReportGenerator';
+export { GoalAnalyticsEngine } from './core/GoalAnalyticsEngine';
 
 // Security Exports
-export { SecurityScanner } from '@/security/SecurityScanner';
+export { SecurityScanner } from './security/SecurityScanner';
 
 // ============================================================================
 // Factory Functions
 // ============================================================================
 
-import { FiveDimensionalManagement } from '@/core/FiveDimensionalManagement';
-import { ManagementConfigSchema, type ManagementConfig } from '@/types/IFiveDimensionalManagement';
+import { FiveDimensionalManagement } from './core/FiveDimensionalManagement';
+import { ManagementConfigSchema, type ManagementConfig } from './types/IFiveDimensionalManagement';
 
 /**
  * Default configuration for the Five-Dimensional Management System

@@ -1,7 +1,7 @@
 {
-  "name": "yyc3-data-service",
+  "name": "yyc3-ai-engine",
   "version": "1.0.0",
-  "description": "YYC³ 数据服务 - 负责数据存储、检索和管理",
+  "description": "YYC³ AI引擎 - 提供AI推理和智能服务",
   "main": "src/index.ts",
   "scripts": {
     "start": "ts-node src/index.ts",

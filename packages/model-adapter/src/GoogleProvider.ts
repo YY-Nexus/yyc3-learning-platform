@@ -21,7 +21,7 @@ import {
   TokenUsage
 } from './IModelAdapter';
 
-import { createLogger } from '@yyc3/ai-engine/src/utils/logger';
+import { createLogger } from '../../../lib/logger';
 
 const logger = createLogger('GoogleProvider');
 

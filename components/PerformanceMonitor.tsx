@@ -113,7 +113,8 @@ export const PerformanceMonitor: React.FC<PerformanceMonitorProps> = ({
       // 监控First Input Delay
       const fidObserver = new PerformanceObserver((list) => {
         list.getEntries().forEach((entry) => {
-          reportMetric('FID', entry.processingStart - entry.startTime);
+          const fidEntry = entry as any;
+          reportMetric('FID', fidEntry.processingStart - fidEntry.startTime);
         });
       });
 
@@ -122,8 +123,9 @@ export const PerformanceMonitor: React.FC<PerformanceMonitorProps> = ({
       // 监控Cumulative Layout Shift
       const clsObserver = new PerformanceObserver((list) => {
         list.getEntries().forEach((entry) => {
-          if (!entry.hadRecentInput) {
-            const currentCls = entry.value;
+          const clsEntry = entry as any;
+          if (!clsEntry.hadRecentInput) {
+            const currentCls = clsEntry.value;
             reportMetric('CLS', currentCls);
           }
         });
@@ -150,7 +152,8 @@ export const PerformanceMonitor: React.FC<PerformanceMonitorProps> = ({
     const resourceObserver = new PerformanceObserver((list) => {
       list.getEntries().forEach((entry) => {
         if (entry.entryType === 'resource') {
-          reportMetric(`${entry.initiatorType}_load_time`, entry.duration);
+          const resourceEntry = entry as any;
+          reportMetric(`${resourceEntry.initiatorType}_load_time`, entry.duration);
         }
       });
     });

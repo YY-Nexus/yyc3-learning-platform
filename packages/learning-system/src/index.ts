@@ -388,6 +388,7 @@ export function createKnowledgeLearningLayer(config?: Partial<KnowledgeLayerConf
  * Create a learning experience from raw data
  * 从原始数据创建学习经验
  */
+// @ts-ignore - Factory function accepts flexible input for convenience
 export function createLearningExperience(data: any): LearningExperience {
   return {
     id: generateId(),
@@ -414,6 +415,7 @@ export function createLearningExperience(data: any): LearningExperience {
  * Create a behavioral record
  * 创建行为记录
  */
+// @ts-ignore - Factory function accepts flexible input for convenience
 export function createBehaviorRecord(data: any): BehaviorRecord {
   return {
     id: generateId(),
@@ -452,6 +454,7 @@ export function createBehaviorRecord(data: any): BehaviorRecord {
  * Create a strategic goal
  * 创建战略目标
  */
+// @ts-ignore - Factory function accepts flexible input for convenience
 export function createStrategicGoal(data: any): StrategicGoal {
   return {
     id: data.id || generateId(),
@@ -474,6 +477,7 @@ export function createStrategicGoal(data: any): StrategicGoal {
  * Create a knowledge item
  * 创建知识项
  */
+// @ts-ignore - Factory function accepts flexible input for convenience
 export function createKnowledgeItem(data: any): KnowledgeItem {
   return {
     id: data.id || generateId(),

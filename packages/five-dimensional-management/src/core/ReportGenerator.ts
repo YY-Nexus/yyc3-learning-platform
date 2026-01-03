@@ -1,5 +1,5 @@
-import { ManagementConfig, ManagementMetrics, DashboardData, ReportConfig, Report, IDimension } from '@/types/IFiveDimensionalManagement';
-import { Logger } from '@/utils/Logger';
+import { ManagementConfig, ManagementMetrics, DashboardData, ReportConfig, Report, IDimension } from '../types/IFiveDimensionalManagement';
+import { Logger } from '../utils/Logger';
 
 export class ReportGenerator {
   private config: ManagementConfig;
@@ -12,6 +12,11 @@ export class ReportGenerator {
 
   async initialize(): Promise<void> {
     this.logger.info('Initializing ReportGenerator...');
+  }
+
+  async updateConfig(newConfig: ManagementConfig): Promise<void> {
+    this.config = newConfig;
+    this.logger.info('ReportGenerator configuration updated');
   }
 
   async generateReport(

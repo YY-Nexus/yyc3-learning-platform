@@ -2,7 +2,7 @@ import { EventEmitter } from 'events';
 import { promises as fs } from 'fs';
 import * as path from 'path';
 import * as crypto from 'crypto';
-import { createLogger } from '../../../lib/logger';
+import { createLogger } from './utils/logger';
 
 const logger = createLogger('DisasterRecoverySystem');
 

@@ -4,7 +4,37 @@
  */
 
 import { logger } from './logger'
-import { Question, QuestionOption, QuestionType, QuestionCategory } from '@/types/question'
+
+export interface QuestionOption {
+  label: string
+  content: string
+}
+
+export type QuestionType = 'single' | 'multiple' | 'judgment' | 'fill' | 'essay'
+
+export type QuestionCategory = 'other' | 'programming' | 'algorithm' | 'database' | 'network' | 'security' | 'system' | 'frontend' | 'backend' | 'devops'
+
+export interface Question {
+  id: number
+  type: QuestionType
+  category: QuestionCategory
+  difficulty: 'easy' | 'medium' | 'hard'
+  title: string
+  options?: QuestionOption[]
+  answer: string
+  explanation: string
+  tags: string[]
+  createdAt?: Date
+  updatedAt?: Date
+}
+
+export interface QuestionFilter {
+  type?: QuestionType
+  category?: QuestionCategory
+  difficulty?: 'easy' | 'medium' | 'hard'
+  tags?: string[]
+  keyword?: string
+}
 
 /**
  * 从 Markdown 文本解析题目列表

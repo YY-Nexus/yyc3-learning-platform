@@ -687,8 +687,8 @@ export interface IFiveDimensionalManagement extends EventEmitter {
   generateReport(reportConfig: ReportConfig): Promise<Report>;
 
   // Events
-  emit(event: 'alert' | 'metric-update' | 'dimension-change' | 'system-status-change', data: any): boolean;
-  on(event: string, listener: (...args: any[]) => void): this;
+  emit<T extends string | symbol>(event: T, ...args: any[]): boolean;
+  on<T extends string | symbol>(event: T, fn: (...args: any[]) => void, context?: any): this;
 }
 
 export interface IDimension extends EventEmitter {
@@ -782,43 +782,3 @@ export const AlertSchema = z.object({
   actions: z.array(z.any()),
   metadata: z.record(z.any())
 });
-
-// Export all types for external use
-export type {
-  ManagementConfig,
-  StrategicGoal,
-  KPI,
-  Milestone,
-  Risk,
-  TechnologyMetrics,
-  PerformanceMetrics,
-  ReliabilityMetrics,
-  ScalabilityMetrics,
-  SecurityMetrics,
-  MaintainabilityMetrics,
-  DataMetrics,
-  DataQualityMetrics,
-  DataGovernanceMetrics,
-  DataAnalyticsMetrics,
-  DataPipelineMetrics,
-  UXMetrics,
-  UsabilityMetrics,
-  AccessibilityMetrics,
-  UXPerformanceMetrics,
-  UserSatisfactionMetrics,
-  UserEngagementMetrics,
-  ValueMetrics,
-  FinancialMetrics,
-  OperationalMetrics,
-  StrategicValueMetrics,
-  CustomerValueMetrics,
-  InnovationMetrics,
-  ManagementMetrics,
-  Alert,
-  DashboardData,
-  ExecutiveSummary,
-  TrendData,
-  Recommendation,
-  Report,
-  ReportConfig
-};

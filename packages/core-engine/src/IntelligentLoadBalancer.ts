@@ -1,6 +1,6 @@
 import { EventEmitter } from 'events';
 import { ServiceInstance, ServiceType, ServiceStatus } from './ServiceDiscovery';
-import { createLogger } from '../../../lib/logger';
+import { createLogger } from './utils/logger';
 
 const logger = createLogger('IntelligentLoadBalancer');
 

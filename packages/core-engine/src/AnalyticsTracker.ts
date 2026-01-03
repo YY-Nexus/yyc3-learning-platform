@@ -813,7 +813,7 @@ export class AnalyticsTracker extends EventEmitter {
       this.resourceMonitor.startMonitoring();
       this.emit('resource:monitoring:started');
     } catch (error) {
-      logger.error('[AnalyticsTracker] Failed to initialize resource monitoring:', error);
+      console.error('[AnalyticsTracker] Failed to initialize resource monitoring:', error);
     }
   }
 

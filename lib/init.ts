@@ -27,7 +27,7 @@ export function initializeApp(): void {
 
     if (process.env.NODE_ENV === 'development') {
       const envInfo = getEnvInfo();
-      logger.debug('应用环境配置', envInfo);
+      console.log('应用环境配置', envInfo);
     }
   } catch (error) {
     logError(error, { context: '应用初始化' });

@@ -6,6 +6,14 @@
  * 定义包含行为层、策略层和知识层的综合学习系统
  */
 
+import type {
+  ConfigObject,
+  Content,
+  NodeData,
+  EventListener,
+  FunctionResult
+} from './types/common.types';
+
 export interface ILearningSystem {
   readonly status: 'initializing' | 'active' | 'suspended' | 'error';
   readonly config: LearningSystemConfig;
@@ -48,6 +56,7 @@ export interface ILearningSystem {
   // Configuration and Monitoring
   updateConfig(config: Partial<LearningSystemConfig>): Promise<void>;
   getLayerMetrics(): LayerMetrics;
+  getLearningData(): LearningSystemMetrics;
   exportKnowledge(): Promise<KnowledgeExport>;
   importKnowledge(data: KnowledgeExport): Promise<void>;
 
@@ -64,6 +73,11 @@ export interface IBehavioralLearningLayer {
   readonly metrics: BehavioralMetrics;
   readonly patterns: BehaviorPattern[];
   readonly models: PredictionModel[];
+
+  // Lifecycle
+  initialize(config?: BehavioralLayerConfig): Promise<void>;
+  start(): Promise<void>;
+  stop(): Promise<void>;
 
   // Behavior Recording
   recordBehavior(behavior: BehaviorRecord): Promise<void>;
@@ -87,6 +101,15 @@ export interface IBehavioralLearningLayer {
   // Configuration
   updateConfig(config: BehavioralLayerConfig): Promise<void>;
   resetBehaviors(): Promise<void>;
+
+  // Events
+  on(event: 'pattern', listener: (pattern: BehaviorPattern) => void): void;
+  on(event: 'anomaly', listener: (anomaly: Anomaly) => void): void;
+  on(event: 'insight', listener: (insight: BehavioralInsight) => void): void;
+  on(event: 'error', listener: (error: Error) => void): void;
+
+  // Learning
+  learnFromExperience(experience: LearningExperience): Promise<LearningResult>;
 }
 
 // Strategic Learning Layer Interface
@@ -95,6 +118,11 @@ export interface IStrategicLearningLayer {
   readonly metrics: StrategicMetrics;
   readonly strategies: Strategy[];
   readonly goals: StrategicGoal[];
+
+  // Lifecycle
+  initialize(config?: StrategicLayerConfig): Promise<void>;
+  start(): Promise<void>;
+  stop(): Promise<void>;
 
   // Strategy Management
   createStrategy(strategy: StrategyDefinition): Promise<Strategy>;
@@ -124,6 +152,15 @@ export interface IStrategicLearningLayer {
   // Configuration
   updateConfig(config: StrategicLayerConfig): Promise<void>;
   resetStrategies(): Promise<void>;
+
+  // Events
+  on(event: 'strategy', listener: (strategy: Strategy) => void): void;
+  on(event: 'goal', listener: (goal: StrategicGoal) => void): void;
+  on(event: 'decision', listener: (decision: StrategicDecision) => void): void;
+  on(event: 'error', listener: (error: Error) => void): void;
+
+  // Learning
+  learnFromExperience(experience: LearningExperience): Promise<LearningResult>;
 }
 
 // Knowledge Learning Layer Interface
@@ -132,6 +169,11 @@ export interface IKnowledgeLearningLayer {
   readonly metrics: KnowledgeMetrics;
   readonly knowledge: KnowledgeGraph;
   readonly reasoning: ReasoningEngine;
+
+  // Lifecycle
+  initialize(config?: KnowledgeLayerConfig): Promise<void>;
+  start(): Promise<void>;
+  stop(): Promise<void>;
 
   // Knowledge Acquisition
   acquireKnowledge(knowledge: KnowledgeItem): Promise<void>;
@@ -142,6 +184,9 @@ export interface IKnowledgeLearningLayer {
   organizeKnowledge(): Promise<OrganizationResult>;
   categorizeKnowledge(knowledgeId: string): Promise<CategorizationResult>;
   linkKnowledge(link: KnowledgeLink): Promise<void>;
+  optimizeKnowledgeGraphStructure(): Promise<void>;
+  analyzeKnowledgeContent(knowledgeId: string): Promise<any>;
+  determineCategories(knowledgeId: string): Promise<string[]>;
 
   // Knowledge Reasoning
   reason(query: ReasoningQuery): Promise<ReasoningResult>;
@@ -161,6 +206,15 @@ export interface IKnowledgeLearningLayer {
   // Configuration
   updateConfig(config: KnowledgeLayerConfig): Promise<void>;
   resetKnowledge(): Promise<void>;
+
+  // Events
+  on(event: 'knowledge', listener: (knowledge: KnowledgeItem) => void): void;
+  on(event: 'reasoning', listener: (result: ReasoningResult) => void): void;
+  on(event: 'generalization', listener: (result: GeneralizationResult) => void): void;
+  on(event: 'error', listener: (error: Error) => void): void;
+
+  // Learning
+  learnFromExperience(experience: LearningExperience): Promise<LearningResult>;
 }
 
 // Core Type Definitions
@@ -231,7 +285,7 @@ export interface ExperienceContext {
 export interface ExperienceAction {
   id: string;
   type: ActionType;
-  parameters: Record<string, any>;
+  parameters: ConfigObject;
   execution: ExecutionRecord;
   timestamp: number;
 }
@@ -359,6 +413,7 @@ export interface KnowledgeGraph {
   edges: KnowledgeEdge[];
   properties: GraphProperties;
   statistics: GraphStatistics;
+  initialize?: (config?: ConfigObject) => FunctionResult<void>;
 }
 
 export interface ReasoningResult {
@@ -432,6 +487,7 @@ export interface KnowledgeMetrics {
   reasoningQueries: number;
   successfulReasoning: number;
   categorizedItems: number;
+  knowledgeEdges?: number;
 }
 
 // Utility Types
@@ -450,6 +506,8 @@ export interface AdaptationStrategy {
   type: 'incremental' | 'radical' | 'hybrid';
   changes: Record<string, any>;
   rationale: string;
+  behavioralImpact?: number;
+  knowledgeImpact?: number;
 }
 
 export interface KnowledgeUpdate {
@@ -458,6 +516,7 @@ export interface KnowledgeUpdate {
   updates: Record<string, any>;
   timestamp: number;
   source: string;
+  significance?: number;
 }
 
 export interface OptimizationResult {
@@ -502,8 +561,8 @@ export interface KnowledgeExport {
   id: string;
   timestamp: number;
   format: 'json' | 'xml' | 'graphml';
-  content: any;
-  metadata: Record<string, any>;
+  content: Content;
+  metadata: ConfigObject;
 }
 
 export interface BehaviorBaseline {
@@ -548,6 +607,7 @@ export interface BehaviorFeedback {
   behaviorId: string;
   feedback: 'positive' | 'negative' | 'neutral';
   reason: string;
+  items?: unknown[];
   timestamp: number;
 }
 
@@ -626,7 +686,7 @@ export interface StrategicPlan {
   id: string;
   name: string;
   description: string;
-  situationAnalysis: any;
+  situationAnalysis: ConfigObject;
   goals: StrategicGoal[];
   strategies: Strategy[];
   timeline: PlanTimeline;
@@ -654,7 +714,9 @@ export interface PlanEvaluation {
 export interface ReasoningEngine {
   id: string;
   type: 'deductive' | 'inductive' | 'abductive' | 'hybrid';
-  parameters: Record<string, any>;
+  parameters: ConfigObject;
+  reason?: (query: string, context?: ConfigObject) => FunctionResult<unknown>;
+  initialize?: (config?: ConfigObject) => FunctionResult<void>;
 }
 
 export interface DataSource {
@@ -676,14 +738,16 @@ export interface KnowledgeExtractionResult {
 export interface ValidationRule {
   id: string;
   description: string;
-  validator: (node: any) => boolean;
+  validator: (node: NodeData) => boolean;
 }
 
 export interface ValidationResult {
   id: string;
   knowledgeId: string;
   isValid: boolean;
+  passed: boolean;
   issues: string[];
+  error?: string;
   confidence: number;
   timestamp: number;
 }
@@ -712,6 +776,7 @@ export interface KnowledgeLink {
   type: string;
   weight: number;
   timestamp: number;
+  properties?: Record<string, any>;
 }
 
 export interface ReasoningQuery {
@@ -726,6 +791,9 @@ export interface InferenceRequest {
   premises: string[];
   rules: string[];
   type: 'forward' | 'backward';
+  context?: Record<string, any>;
+  constraints?: string[];
+  preferences?: Record<string, any>;
 }
 
 export interface InferenceResult {
@@ -766,14 +834,14 @@ export interface PruningResult {
 
 export interface ExportFormat {
   type: 'json' | 'xml' | 'graphml' | 'csv';
-  options?: Record<string, any>;
+  options?: ConfigObject;
 }
 
 export interface KnowledgeImport {
   id: string;
   format: ExportFormat['type'];
-  content: any;
-  metadata: Record<string, any>;
+  content: Content;
+  metadata: ConfigObject;
   timestamp: number;
 }
 
@@ -835,6 +903,7 @@ export interface ApplicabilityScope {
   contexts: string[];
   timeRange: TimeRange;
   confidence: number;
+  impact?: number;
 }
 
 export interface BehaviorMetadata {
@@ -847,7 +916,7 @@ export interface BehaviorMetadata {
 export interface PatternDefinition {
   id: string;
   type: string;
-  parameters: Record<string, any>;
+  parameters: ConfigObject;
   description: string;
 }
 
@@ -855,6 +924,7 @@ export interface Frequency {
   count: number;
   rate: number;
   period: 'second' | 'minute' | 'hour' | 'day' | 'week' | 'month';
+  support?: number;
 }
 
 export interface BehaviorExample {
@@ -1023,7 +1093,7 @@ export interface QueryContent {
   id: string;
   type: QueryType;
   content: string;
-  parameters: Record<string, any>;
+  parameters: ConfigObject;
 }
 
 export interface QueryContext {
@@ -1036,7 +1106,7 @@ export interface QueryContext {
 export interface QueryConstraint {
   id: string;
   type: string;
-  value: any;
+  value: unknown;
 }
 
 export interface QueryPreference {
@@ -1136,7 +1206,7 @@ export interface ActorProperties {
 
 export interface BehaviorAction {
   type: string;
-  parameters: Record<string, any>;
+  parameters: ConfigObject;
   timestamp: number;
 }
 
@@ -1183,7 +1253,7 @@ export interface SideEffect {
 export interface ActionResult {
   success: boolean;
   message: string;
-  data?: any;
+  data?: unknown;
 }
 
 export interface PredictionModel {
@@ -1202,7 +1272,7 @@ export interface PredictionModel {
 export interface ModelParameters {
   id: string;
   modelType: ModelType;
-  hyperparameters: Record<string, any>;
+  hyperparameters: ConfigObject;
   configuration: Record<string, any>;
   constraints: Record<string, any>;
   validationMetrics: Record<string, number>;
@@ -1239,7 +1309,7 @@ export interface FeatureVector {
 }
 
 export interface Label {
-  value: any;
+  value: unknown;
   confidence: number;
 }
 
@@ -1325,6 +1395,7 @@ export interface ReasoningPath {
   logic: LogicalStructure;
   assumptions: Assumption[];
   conclusions: Conclusion[];
+  map?: <T>(callback: (step: ReasoningStep, index: number) => T) => T[];
 }
 
 export interface ReasoningStep {
@@ -1452,9 +1523,11 @@ export interface NodeProperties {
   id: string;
   name: string;
   type: string;
-  metadata: Record<string, any>;
+  metadata: ConfigObject;
   createdAt: number;
   updatedAt: number;
+  confidence?: number;
+  categories?: string[];
 }
 
 export interface EdgeProperties {
@@ -1463,14 +1536,14 @@ export interface EdgeProperties {
   source: string;
   target: string;
   weight: number;
-  metadata: Record<string, any>;
+  metadata: ConfigObject;
 }
 
 export interface LogicalStructure {
   id: string;
   type: string;
   structure: Record<string, any>;
-  metadata: Record<string, any>;
+  metadata: ConfigObject;
 }
 
 export interface ReasoningInput {
@@ -1501,7 +1574,7 @@ export interface EvidenceContent {
   type: string;
   content: string;
   timestamp: number;
-  metadata: Record<string, any>;
+  metadata: ConfigObject;
 }
 
 export interface ErrorContext {
@@ -1516,7 +1589,7 @@ export interface ErrorContext {
 export interface EnvironmentCondition {
   id: string;
   type: string;
-  value: any;
+  value: unknown;
   threshold: number;
   status: string;
 }
@@ -1552,7 +1625,7 @@ export interface Target {
   name: string;
   description: string;
   type: string;
-  value: any;
+  value: unknown;
   unit: string;
   deadline: number;
 }
@@ -1562,7 +1635,7 @@ export interface FilterConfig {
   type: string;
   field: string;
   operator: string;
-  value: any;
+  value: unknown;
   active: boolean;
 }
 
@@ -1676,20 +1749,20 @@ export interface ModelConfig {
   id: string;
   type: ModelType;
   algorithm: string;
-  parameters: Record<string, any>;
+  parameters: ConfigObject;
   training: TrainingConfig;
   evaluation: EvaluationConfig;
 }
 
 export interface TrainingConfig {
   algorithm: string;
-  hyperparameters: Record<string, any>;
+  hyperparameters: ConfigObject;
   validation: ValidationConfig;
 }
 
 export interface ValidationConfig {
   method: ValidationMethod;
-  parameters: Record<string, any>;
+  parameters: ConfigObject;
   metrics: string[];
 }
 
@@ -1758,7 +1831,7 @@ export type AlertSeverity = 'info' | 'warning' | 'error' | 'critical';
 
 export interface AlertAction {
   type: ActionType;
-  parameters: Record<string, any>;
+  parameters: ConfigObject;
 }
 
 export interface DashboardConfig {

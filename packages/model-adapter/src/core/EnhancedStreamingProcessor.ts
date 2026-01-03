@@ -8,7 +8,7 @@
  */
 
 import { EventEmitter } from 'events';
-import { ModelRequest, ModelResponse, ChatMessage } from './IModelAdapter';
+import { ModelRequest, ModelResponse, ChatMessage } from '../IModelAdapter';
 
 export interface StreamingConfig {
   enableBuffering: boolean;

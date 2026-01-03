@@ -19,121 +19,80 @@ import {
   TimeRange,
   ModelUpdateResult,
   OptimizationResult,
-  BehaviorFeedback
+  BehaviorFeedback,
+  LearningExperience,
+  LearningResult,
+  BehavioralLearning,
+  PredictionModel,
+  ModelPerformance,
+  ModelType,
+  ModelConfig,
+  BehaviorBaseline,
+  Anomaly,
+  BehaviorClassification,
+  BehavioralInsight,
+  PredictionReasoning,
+  PredictedBehavior,
+  AlternativePrediction,
+  ModelParameters
 } from '../ILearningSystem';
+import {
+  FeatureVector,
+  ConfigObject,
+  TrainingData,
+  Label
+} from '../types/common.types';
 
-// Additional interfaces for BehavioralLearningLayer
-interface PredictionModel {
-  id: string;
-  type: string;
-  parameters: any;
-  performance: ModelPerformance;
-  lastTrained: number;
-  trainingData: TrainingStatistics;
-}
-
-interface ModelPerformance {
-  accuracy: number;
-  precision: number;
-  recall: number;
-  f1Score: number;
-  confusionMatrix: number[][];
-  customMetrics: Record<string, number>;
-}
-
-interface TrainingStatistics {
-  samples: number;
-  features: number;
-  trainingTime: number;
-  epochs: number;
-  loss: number[];
-}
-
-interface FeatureVector {
-  values: number[];
-  metadata: any;
-}
-
-interface TrainingData {
+interface TestData {
   features: FeatureVector[];
   labels: Label[];
-  timestamps: number[];
-}
-
-interface Label {
-  value: any;
-  confidence: number;
-}
-
-interface TestTrainingData {
-  features: FeatureVector[];
-  labels: Label[];
-  expected: any[];
+  expected: string[];
 }
 
 interface ClassificationResult {
   category: string;
   confidence: number;
   reasoning: string;
-  alternatives: any[];
+  alternatives: Alternative[];
+}
+
+interface Alternative {
+  id: string;
+  behavior: BehaviorAction;
+  probability: number;
+  reason: string;
+}
+
+interface BehaviorAction {
+  type: string;
+  parameters: Record<string, unknown>;
+  timestamp: number;
 }
 
 interface PredictionResult {
-  behavior: any;
+  behavior: BehaviorAction;
   probability: number;
   confidence: number;
 }
 
 interface CombinedPrediction {
-  behaviors: any[];
+  behaviors: PredictedBehavior[];
   confidence: number;
-  reasoning: string;
-  alternatives: any[];
-}
-
-interface Anomaly {
-  id: string;
-  behaviorId: string;
-  type: string;
-  severity: number;
-  description: string;
-  timestamp: number;
-}
-
-interface BehaviorBaseline {
-  normalPatterns: any[];
-  metrics: any;
-  thresholds: any;
+  reasoning: PredictionReasoning;
+  alternatives: AlternativePrediction[];
 }
 
 interface BehaviorData {
   id: string;
-  features?: any;
-  metadata?: any;
-}
-
-interface BehaviorClassification {
-  behaviorId: string;
-  category: string;
-  confidence: number;
-  reasoning: string;
-  alternatives: any[];
-}
-
-interface BehavioralInsight {
-  id: string;
-  type: string;
-  description: string;
-  confidence: number;
-  impact: any;
-  recommendations: any[];
+  features?: Record<string, unknown>;
+  metadata?: Record<string, unknown>;
 }
 
 interface FeedbackItem {
   modelId: string;
   behaviorId: string;
-  expected: any;
-  actual: any;
+  expected: string;
+  actual: string;
   correct: boolean;
   confidence: number;
 }
@@ -152,14 +111,6 @@ interface OptimizationOpportunity {
   priority: number;
 }
 
-interface OptimizationResult {
-  id: string;
-  type: string;
-  success: boolean;
-  improvement: number;
-  timestamp: number;
-}
-
 /**
  * Behavioral Learning Layer implementation
  * 行为学习层实现
@@ -171,13 +122,17 @@ export class BehavioralLearningLayer extends EventEmitter implements IBehavioral
   private _behaviors: BehaviorRecord[] = [];
   private _patterns: BehaviorPattern[] = [];
   private _models: Map<string, PredictionModel> = new Map();
-  private _cache: Map<string, any> = new Map();
+  private _cache: Map<string, unknown> = new Map();
   private _processingQueue: BehaviorRecord[] = [];
 
   constructor() {
     super();
     this._config = this.createDefaultConfig();
     this._metrics = this.initializeMetrics();
+  }
+
+  private generateId(): string {
+    return `beh_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
   }
 
   // Getters
@@ -384,11 +339,10 @@ export class BehavioralLearningLayer extends EventEmitter implements IBehavioral
       const result = await this.classifyWithModel(classificationModel, features);
 
       return {
-        behaviorId: behavior.id,
-        category: result.category,
+        id: this.generateId(),
+        type: result.category,
         confidence: result.confidence,
-        reasoning: result.reasoning,
-        alternatives: result.alternatives
+        timestamp: Date.now()
       };
     } catch (error) {
       this.emit('error', error);
@@ -448,21 +402,19 @@ export class BehavioralLearningLayer extends EventEmitter implements IBehavioral
       const performance = await this.evaluateModelPerformance(modelId);
 
       return {
+        id: this.generateId(),
         modelId,
-        success: true,
-        samplesTrained: data.features.length,
-        performance,
-        trainingTime: Date.now(),
-        errors: []
+        performanceChange: performance.accuracy - 0.5,
+        timestamp: Date.now(),
+        status: 'success' as const
       };
     } catch (error) {
       return {
+        id: this.generateId(),
         modelId,
-        success: false,
-        samplesTrained: 0,
-        performance: { accuracy: 0, precision: 0, recall: 0, f1Score: 0, confusionMatrix: [], customMetrics: {} },
-        trainingTime: Date.now(),
-        errors: [(error as Error).message]
+        performanceChange: 0,
+        timestamp: Date.now(),
+        status: 'failed' as const
       };
     }
   }
@@ -501,10 +453,10 @@ export class BehavioralLearningLayer extends EventEmitter implements IBehavioral
   async adaptBehaviorFeedback(feedback: BehaviorFeedback): Promise<void> {
     try {
       // Update models based on feedback
-      for (const feedbackItem of feedback.items) {
-        const model = this._models.get(feedbackItem.modelId);
+      for (const feedbackItem of feedback["items"] || []) {
+        const model = this._models.get((feedbackItem as ConfigObject)["modelId"] as string);
         if (model) {
-          await this.adjustModelWeights(model, feedbackItem);
+          await this.adjustModelWeights(model, feedbackItem as unknown as FeedbackItem);
         }
       }
 
@@ -537,20 +489,22 @@ export class BehavioralLearningLayer extends EventEmitter implements IBehavioral
       const results = await this.applyOptimizations(opportunities);
 
       return {
-        success: true,
-        duration: Date.now() - startTime,
-        improvements: results.length,
-        performanceGain: this.calculatePerformanceGain(currentPerformance, results),
-        timestamp: Date.now()
+        id: this.generateId(),
+        timestamp: Date.now(),
+        improvements: {
+          accuracy: this.calculatePerformanceGain(currentPerformance, results),
+          responseTime: results.length > 0 ? 0.1 : 0
+        },
+        recommendations: results.flatMap(r => r.recommendations || []),
+        cost: results.length * 0.01
       };
     } catch (error) {
       return {
-        success: false,
-        duration: 0,
-        improvements: 0,
-        performanceGain: 0,
+        id: this.generateId(),
         timestamp: Date.now(),
-        error: (error as Error).message
+        improvements: {},
+        recommendations: [],
+        cost: 0
       };
     }
   }
@@ -609,6 +563,111 @@ export class BehavioralLearningLayer extends EventEmitter implements IBehavioral
     this.emit('behaviors_reset');
   }
 
+  /**
+   * Learn from experience
+   * 从经验中学习
+   */
+  async learnFromExperience(experience: LearningExperience): Promise<LearningResult> {
+    try {
+      // Analyze experience actions and outcomes
+      const behavioralLearnings: BehavioralLearning[] = [];
+      
+      for (const action of experience.actions) {
+        const actorId = 'system';
+        const behaviorRecord: BehaviorRecord = {
+          id: this.generateId(),
+          timestamp: action.timestamp,
+          actor: {
+            id: actorId,
+            type: 'system',
+            properties: {
+              id: actorId,
+              name: 'System',
+              capabilities: [],
+              constraints: []
+            }
+          },
+          action: {
+            type: action.type,
+            parameters: action.parameters,
+            timestamp: action.timestamp
+          },
+          context: {
+            situation: experience.context.situation,
+            environment: experience.context.environment,
+            history: {
+              id: this.generateId(),
+              actions: [],
+              timeline: [],
+              contextHistory: [],
+              outcomes: []
+            },
+            goals: experience.context.objectives || []
+          },
+          outcome: {
+            result: {
+              success: true,
+              message: 'Action completed successfully'
+            },
+            effectiveness: 0.8,
+            sideEffects: [],
+            measurements: []
+          },
+          metadata: {
+            id: this.generateId(),
+            tags: ['experience'],
+            source: 'learning',
+            version: '1.0.0'
+          }
+        };
+        
+        await this.recordBehavior(behaviorRecord);
+        
+        behavioralLearnings.push({
+          id: this.generateId(),
+          behaviorId: behaviorRecord.id,
+          learnings: [action.type],
+          confidence: 0.8,
+          timestamp: Date.now()
+        });
+      }
+      
+      // Analyze patterns from experience
+      const patterns = await this.analyzePatterns({
+        start: experience.timestamp - 86400000,
+        end: experience.timestamp
+      });
+      
+      // Generate insights
+      const insights = await this.generateBehavioralInsights();
+      
+      // Create learning result
+      const result: LearningResult = {
+        experienceId: experience.id,
+        timestamp: Date.now(),
+        behavioralLearnings,
+        strategicLearnings: [],
+        knowledgeLearnings: [],
+        confidence: 0.8,
+        applicability: {
+          contexts: ['general'],
+          timeRange: {
+            start: Date.now() - 86400000,
+            end: Date.now() + 86400000 * 7
+          },
+          confidence: 0.8,
+          impact: 0.7
+        }
+      };
+      
+      this.emit('learned', result);
+      return result;
+    } catch (error) {
+      this.emit('error', error);
+      throw error;
+    }
+  }
+
   // Private helper methods
 
   private createDefaultConfig(): BehavioralLayerConfig {
@@ -647,19 +706,28 @@ export class BehavioralLearningLayer extends EventEmitter implements IBehavioral
     };
   }
 
-  private async initializeModels(models: any[]): Promise<void> {
+  private async initializeModels(models: ModelConfig[]): Promise<void> {
     // Initialize prediction models
     for (const modelConfig of models) {
       const model = await this.createModel(modelConfig);
-      this._models.set(modelConfig.id, model);
+      this._models.set(model.id, model);
     }
   }
 
-  private async createModel(config: any): Promise<PredictionModel> {
+  private async createModel(config: ModelConfig): Promise<PredictionModel> {
+    const parameters: ModelParameters = {
+      id: config.id,
+      modelType: config.type,
+      hyperparameters: config.parameters,
+      configuration: {},
+      constraints: {},
+      validationMetrics: {}
+    };
+
     return {
       id: config.id,
-      type: config.type,
-      parameters: config.parameters,
+      type: config.type as ModelType,
+      parameters,
       performance: {
         accuracy: 0,
         precision: 0,
@@ -788,19 +856,40 @@ export class BehavioralLearningLayer extends EventEmitter implements IBehavioral
   }
 
   private validatePattern(pattern: BehaviorPattern): boolean {
-    return pattern.confidence > 0.5 && pattern.frequency.support > 5;
+    return pattern.confidence > 0.5 && (pattern.frequency.support || 0) > 5;
   }
 
   private async detectAnomaly(behavior: BehaviorRecord, baseline: BehaviorBaseline): Promise<Anomaly | null> {
-    // Compare behavior against baseline and detect anomalies
+    const deviation = this.calculateDeviation(behavior, baseline);
+    
+    if (deviation > 2.0) {
+      return {
+        id: this.generateId(),
+        type: 'behavioral',
+        description: `Behavioral anomaly detected for ${behavior.id}`,
+        severity: deviation > 3.0 ? 'high' : 'medium',
+        timestamp: Date.now()
+      };
+    }
+    
     return null;
+  }
+
+  private calculateDeviation(behavior: BehaviorRecord, baseline: BehaviorBaseline): number {
+    return 0;
   }
 
   private async extractFeatures(behavior: BehaviorData | BehaviorRecord): Promise<FeatureVector> {
     // Extract features from behavior
     return {
       values: [],
-      metadata: { timestamp: Date.now(), source: 'behavior' }
+      metadata: {
+        id: this.generateId(),
+        name: 'behavior-features',
+        description: 'Features extracted from behavior',
+        type: 'numeric',
+        version: '1.0'
+      }
     };
   }
 
@@ -832,11 +921,25 @@ export class BehavioralLearningLayer extends EventEmitter implements IBehavioral
   }
 
   private combinePredictions(predictions: PredictionResult[]): CombinedPrediction {
-    // Combine multiple predictions using ensemble methods
+    const features: Record<string, number> = {};
+    const confidenceScores: Record<string, number> = {};
+    
+    predictions.forEach((pred, idx) => {
+      features[`model_${idx}`] = pred.confidence || 0.5;
+      confidenceScores[`model_${idx}`] = pred.confidence || 0.5;
+    });
+    
+    const reasoning: PredictionReasoning = {
+      id: this.generateId(),
+      modelId: 'ensemble',
+      features,
+      confidenceScores
+    };
+    
     return {
       behaviors: [],
       confidence: 0.5,
-      reasoning: 'Ensemble prediction',
+      reasoning,
       alternatives: []
     };
   }
@@ -919,5 +1022,19 @@ export class BehavioralLearningLayer extends EventEmitter implements IBehavioral
 
   private async updateModelIncrementally(modelId: string, model: PredictionModel, features: FeatureVector): Promise<void> {
     // Update model incrementally with new features
+  }
+
+  // Event handling - Type-safe event emitters
+  // @ts-expect-error - Overriding EventEmitter.on with specific event types
+  on(event: 'pattern', listener: (pattern: BehaviorPattern) => void): this;
+  // @ts-expect-error - Overriding EventEmitter.on with specific event types
+  on(event: 'anomaly', listener: (anomaly: Anomaly) => void): this;
+  // @ts-expect-error - Overriding EventEmitter.on with specific event types
+  on(event: 'insight', listener: (insight: BehavioralInsight) => void): this;
+  // @ts-expect-error - Overriding EventEmitter.on with specific event types
+  on(event: 'error', listener: (error: Error) => void): this;
+  // @ts-expect-error - Overriding EventEmitter.on implementation
+  on(event: string | symbol, listener: (...args: unknown[]) => void): this {
+    return super.on(event, listener);
   }
 }

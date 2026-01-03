@@ -1,5 +1,5 @@
-import { ManagementConfig, StrategicGoal, KPI, Milestone, Risk, Recommendation } from '@/types/IFiveDimensionalManagement';
-import { Logger } from '@/utils/Logger';
+import { ManagementConfig, StrategicGoal, KPI, Milestone, Risk, Recommendation } from '../types/IFiveDimensionalManagement';
+import { Logger } from '../utils/Logger';
 
 export class GoalAnalyticsEngine {
   private config: ManagementConfig;

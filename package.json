@@ -60,6 +60,8 @@
     "@testing-library/dom": "^10.4.0",
     "@testing-library/react": "^16.1.0",
     "@yyc3/core-engine": "file:packages/core-engine",
+    "@yyc3/five-dimensional-management": "file:packages/five-dimensional-management",
+    "@yyc3/learning-system": "file:packages/learning-system",
     "@yyc3/widget-ui": "file:packages/widget-ui",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",

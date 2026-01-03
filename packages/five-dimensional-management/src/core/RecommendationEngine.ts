@@ -1,5 +1,5 @@
-import { ManagementConfig, ManagementMetrics, Recommendation, IDimension } from '@/types/IFiveDimensionalManagement';
-import { Logger } from '@/utils/Logger';
+import { ManagementConfig, ManagementMetrics, Recommendation, IDimension } from '../types/IFiveDimensionalManagement';
+import { Logger } from '../utils/Logger';
 
 export class RecommendationEngine {
   private config: ManagementConfig;

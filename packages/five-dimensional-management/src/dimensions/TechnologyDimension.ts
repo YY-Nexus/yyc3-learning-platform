@@ -12,10 +12,10 @@ import {
   MaintainabilityMetrics,
   Recommendation,
   AlertLevel
-} from '@/types/IFiveDimensionalManagement';
-import { Logger } from '@/utils/Logger';
-import { SystemMonitor } from '@/monitoring/SystemMonitor';
-import { SecurityScanner } from '@/security/SecurityScanner';
+} from '../types/IFiveDimensionalManagement';
+import { Logger } from '../utils/Logger';
+import { SystemMonitor } from '../monitoring/SystemMonitor';
+import { SecurityScanner } from '../security/SecurityScanner';
 
 /**
  * Technology Dimension - Manages system performance, reliability, and security

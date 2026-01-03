@@ -96,8 +96,8 @@ import {
 } from './IModelAdapter';
 
 import { EnhancedStreamingProcessor, StreamingConfig } from './core/EnhancedStreamingProcessor';
-import { IntelligentCacheLayer, CacheConfig } from './core/IntelligentCacheLayer';
-import { createLogger } from '@yyc3/ai-engine/src/utils/logger';
+import { IntelligentCacheLayer, CacheConfig, CacheStrategy } from './core/IntelligentCacheLayer';
+import { createLogger } from '../../../lib/logger';
 
 const logger = createLogger('ModelAdapter');
 
@@ -487,7 +487,7 @@ export class ModelAdapter extends EventEmitter implements IModelAdapter {
 
       await this._streamingProcessor.processStream(
         request,
-        async (req: ModelRequest) => {
+        (req: ModelRequest) => {
           const streamProcessor = async function* (streamRequest: ModelRequest): AsyncIterable<ModelResponse> {
             const chunks: ModelResponse[] = [];
             await provider.processStreamingRequest(streamRequest, (chunk) => {
@@ -520,6 +520,137 @@ export class ModelAdapter extends EventEmitter implements IModelAdapter {
     if (timeout) {
       clearTimeout(timeout);
       this._requestTimeouts.delete(requestId);
+    }
+  }
+
+  /**
+   * Generate text from a prompt
+   * 从提示生成文本
+   */
+  async generate(options: {
+    prompt: string;
+    maxTokens?: number;
+    temperature?: number;
+    model?: string;
+    systemPrompt?: string;
+  }): Promise<{ text: string; usage?: any }> {
+    const requestBase = {
+      id: `gen_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+      taskType: 'generation' as const,
+      prompt: options.prompt,
+      metadata: {
+        requestId: `gen_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+        priority: 'normal' as const
+      }
+    };
+
+    const request: ModelRequest = requestBase;
+
+    if (options.systemPrompt !== undefined) {
+      request.systemPrompt = options.systemPrompt;
+    }
+    if (options.maxTokens !== undefined) {
+      request.maxTokens = options.maxTokens;
+    }
+    if (options.temperature !== undefined) {
+      request.temperature = options.temperature;
+    }
+
+    const response = await this.processRequest(request);
+
+    return {
+      text: typeof response.content === 'string' ? response.content : JSON.stringify(response.content),
+      usage: response.usage
+    };
+  }
+
+  /**
+   * Generate streaming text from a prompt (callback version)
+   * 从提示生成流式文本（回调版本）
+   */
+  async generateStream(
+    options: {
+      prompt: string;
+      maxTokens?: number;
+      temperature?: number;
+      model?: string;
+      systemPrompt?: string;
+    },
+    onChunk: (chunk: string) => void
+  ): Promise<void> {
+    const requestBase = {
+      id: `stream_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+      taskType: 'generation' as const,
+      prompt: options.prompt,
+      metadata: {
+        requestId: `stream_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+        priority: 'normal' as const
+      }
+    };
+
+    const request: ModelRequest = requestBase;
+
+    if (options.systemPrompt !== undefined) {
+      request.systemPrompt = options.systemPrompt;
+    }
+    if (options.maxTokens !== undefined) {
+      request.maxTokens = options.maxTokens;
+    }
+    if (options.temperature !== undefined) {
+      request.temperature = options.temperature;
+    }
+    request.stream = true;
+
+    await this.processStreamingRequest(request, (chunk) => {
+      const content = typeof chunk.content === 'string' ? chunk.content : JSON.stringify(chunk.content);
+      onChunk(content);
+    });
+  }
+
+  /**
+   * Generate streaming text from a prompt (async generator version)
+   * 从提示生成流式文本（异步生成器版本）
+   */
+  async *generateStream(
+    options: {
+      prompt: string;
+      maxTokens?: number;
+      temperature?: number;
+      model?: string;
+      systemPrompt?: string;
+    }
+  ): AsyncIterable<{ text: string }> {
+    const requestBase = {
+      id: `stream_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+      taskType: 'generation' as const,
+      prompt: options.prompt,
+      metadata: {
+        requestId: `stream_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+        priority: 'normal' as const
+      }
+    };
+
+    const request: ModelRequest = requestBase;
+
+    if (options.systemPrompt !== undefined) {
+      request.systemPrompt = options.systemPrompt;
+    }
+    if (options.maxTokens !== undefined) {
+      request.maxTokens = options.maxTokens;
+    }
+    if (options.temperature !== undefined) {
+      request.temperature = options.temperature;
+    }
+    request.stream = true;
+
+    const chunks: string[] = [];
+    await this.processStreamingRequest(request, (chunk) => {
+      const content = typeof chunk.content === 'string' ? chunk.content : JSON.stringify(chunk.content);
+      chunks.push(content);
+    });
+
+    for (const chunk of chunks) {
+      yield { text: chunk };
     }
   }
 
@@ -679,7 +810,31 @@ export class ModelAdapter extends EventEmitter implements IModelAdapter {
    * 获取缓存统计
    */
   async getCacheStats(): Promise<CacheStats> {
-    return await this._cache.getStats();
+    const statsArray = await this._cache.getStats();
+    
+    const aggregated: CacheStats = {
+      size: 0,
+      hitRate: 0,
+      missRate: 0,
+      evictions: 0,
+      memoryUsage: 0
+    };
+    
+    for (const stats of statsArray) {
+      aggregated.size += stats.size;
+      aggregated.evictions += stats.evictions;
+      aggregated.memoryUsage += stats.memoryUsage;
+    }
+    
+    const totalRequests = statsArray.reduce((sum, s) => sum + s.hits + s.misses, 0);
+    const totalHits = statsArray.reduce((sum, s) => sum + s.hits, 0);
+    
+    if (totalRequests > 0) {
+      aggregated.hitRate = totalHits / totalRequests;
+      aggregated.missRate = 1 - aggregated.hitRate;
+    }
+    
+    return aggregated;
   }
 
   // Private helper methods

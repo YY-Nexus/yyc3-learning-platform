@@ -1,5 +1,5 @@
-import { ManagementConfig, StrategicGoal } from '@/types/IFiveDimensionalManagement';
-import { Logger } from '@/utils/Logger';
+import { ManagementConfig, StrategicGoal } from '../types/IFiveDimensionalManagement';
+import { Logger } from '../utils/Logger';
 
 export class GoalValidator {
   private config: ManagementConfig;
@@ -14,7 +14,7 @@ export class GoalValidator {
     this.logger.info('Initializing GoalValidator...');
   }
 
-  async validateGoal(goal: StrategicGoal): Promise<void> {
+  async validateGoal(goal: Omit<StrategicGoal, 'id' | 'createdAt' | 'updatedAt' | 'lastReviewed'>): Promise<void> {
     // Basic validation
     if (!goal.title || goal.title.trim() === '') {
       throw new Error('Goal title is required');

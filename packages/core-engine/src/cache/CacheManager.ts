@@ -8,7 +8,7 @@
  */
 
 import { EventEmitter } from 'eventemitter3';
-import { createLogger } from '../../../../lib/logger';
+import { createLogger } from '../utils/logger';
 
 const logger = createLogger('CacheManager');
 

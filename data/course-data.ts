@@ -1,5 +1,5 @@
 export interface Course {
-  id: number
+  id: string
   title: string
   description: string
   instructor: string
@@ -30,7 +30,7 @@ export interface Course {
 
 export const courseData: Course[] = [
   {
-    id: 1,
+    id: "1",
     title: "GPT模型基础与应用",
     description: "从零开始学习大语言模型的基本原理，掌握GPT系列模型的核心概念和实际应用场景",
     instructor: "李教授",
@@ -73,7 +73,7 @@ export const courseData: Course[] = [
     ],
   },
   {
-    id: 2,
+    id: "2",
     title: "Prompt Engineering实战指南",
     description: "深入学习提示词工程的核心技巧，掌握如何设计高效的提示词来优化AI模型输出",
     instructor: "王工程师",
@@ -92,7 +92,7 @@ export const courseData: Course[] = [
     highlights: ["掌握提示词设计的核心原则", "学习高级提示词技巧和模式", "实战演练各类应用场景"],
   },
   {
-    id: 3,
+    id: "3",
     title: "AI应用开发框架详解",
     description: "学习主流AI应用开发框架，包括LangChain、LlamaIndex等工具的使用和最佳实践",
     instructor: "张架构师",
@@ -110,7 +110,7 @@ export const courseData: Course[] = [
     highlights: ["掌握LangChain框架的核心组件", "学习LlamaIndex的索引和查询机制", "构建完整的AI应用系统"],
   },
   {
-    id: 4,
+    id: "4",
     title: "多模态AI模型应用",
     description: "探索文本、图像、音频等多模态AI模型的应用，学习如何构建综合性AI解决方案",
     instructor: "陈博士",
@@ -128,7 +128,7 @@ export const courseData: Course[] = [
     highlights: ["了解多模态AI的基本原理", "掌握文本与图像结合的应用开发", "学习音频处理与分析技术"],
   },
   {
-    id: 5,
+    id: "5",
     title: "AI伦理与安全实践",
     description: "了解AI开发中的伦理考量和安全实践，学习如何构建负责任的AI应用",
     instructor: "刘专家",
@@ -146,7 +146,7 @@ export const courseData: Course[] = [
     highlights: ["理解AI伦理的核心原则", "学习隐私保护和数据安全", "掌握负责任的AI开发方法"],
   },
   {
-    id: 6,
+    id: "6",
     title: "企业级AI解决方案设计",
     description: "学习如何为企业设计和实施AI解决方案，包括需求分析、架构设计和部署策略",
     instructor: "赵总监",
@@ -164,7 +164,7 @@ export const courseData: Course[] = [
     highlights: ["掌握企业AI需求分析方法", "学习大规模AI系统架构设计", "了解AI项目管理和实施策略"],
   },
   {
-    id: 7,
+    id: "7",
     title: "生成式人工智能应用工程师（高级认证）",
     description: "基于百度智能云课程体系的专业AI工程师认证培训，涵盖提示词工程、数据安全、团队管理等核心技能",
     instructor: "百度智能云",
@@ -183,7 +183,7 @@ export const courseData: Course[] = [
     highlights: ["获得官方认证证书", "掌握企业级AI应用开发", "提升职场竞争力"],
   },
   {
-    id: 8,
+    id: "8",
     title: "医疗行业AI应用实践",
     description: "探索AI在医疗领域的创新应用，学习医疗数据处理、诊断辅助和健康管理系统开发",
     instructor: "郑医生",
@@ -202,7 +202,7 @@ export const courseData: Course[] = [
     highlights: ["了解医疗数据处理特点", "学习医疗AI模型开发", "掌握医疗AI伦理与合规"],
   },
   {
-    id: 9,
+    id: "9",
     title: "金融科技与AI应用",
     description: "学习AI在金融领域的应用，包括风险评估、智能投顾、反欺诈系统等实用案例",
     instructor: "吴分析师",
@@ -220,7 +220,7 @@ export const courseData: Course[] = [
     highlights: ["掌握金融数据分析方法", "学习智能投顾系统开发", "了解金融风控AI应用"],
   },
   {
-    id: 10,
+    id: "10",
     title: "零代码AI应用构建实战",
     description: "无需编程基础，学习使用现代化工具快速构建AI应用，适合产品经理、运营人员和初学者",
     instructor: "林讲师",
@@ -238,7 +238,7 @@ export const courseData: Course[] = [
     highlights: ["掌握主流零代码平台使用", "学习AI功能快速集成", "构建实用的AI应用"],
   },
   {
-    id: 11,
+    id: "11",
     title: "大模型微调与定制化",
     description: "深入学习如何对大型语言模型进行微调和定制，以适应特定领域和任务需求",
     instructor: "黄研究员",
@@ -256,7 +256,7 @@ export const courseData: Course[] = [
     highlights: ["掌握模型微调核心技术", "学习参数高效微调方法", "实现领域专用模型开发"],
   },
   {
-    id: 12,
+    id: "12",
     title: "AI产品经理实战课程",
     description: "专为产品经理设计的AI课程，学习如何规划、设计和管理AI产品，提升产品竞争力",
     instructor: "周产品总监",
@@ -275,7 +275,7 @@ export const courseData: Course[] = [
     highlights: ["掌握AI产品规划方法", "学习用户需求分析", "了解AI产品迭代策略"],
   },
   {
-    id: 13,
+    id: "13",
     title: "计算机视觉与深度学习",
     description: "系统学习计算机视觉技术和深度学习模型，掌握图像识别、目标检测等核心算法",
     instructor: "田教授",
@@ -293,7 +293,7 @@ export const courseData: Course[] = [
     highlights: ["掌握卷积神经网络原理", "学习目标检测算法", "实现图像分割应用"],
   },
   {
-    id: 14,
+    id: "14",
     title: "自然语言处理入门到精通",
     description: "全面学习NLP技术，从基础概念到高级应用，掌握文本分析、情感分析等实用技能",
     instructor: "孙博士",
@@ -311,7 +311,7 @@ export const courseData: Course[] = [
     highlights: ["掌握文本预处理技术", "学习词向量和语言模型", "实现情感分析应用"],
   },
   {
-    id: 15,
+    id: "15",
     title: "AI创业实战指南",
     description: "为创业者和创新团队提供的AI创业课程，涵盖市场分析、产品定位、融资策略等关键内容",
     instructor: "杨创始人",
@@ -329,7 +329,7 @@ export const courseData: Course[] = [
     highlights: ["了解AI创业市场趋势", "学习产品定位和差异化", "掌握融资路径和策略"],
   },
   {
-    id: 16,
+    id: "16",
     title: "DeepSeek大模型应用开发",
     description: "基于DeepSeek大模型的应用开发课程，学习如何利用先进的AI模型构建创新应用",
     instructor: "DeepSeek团队",

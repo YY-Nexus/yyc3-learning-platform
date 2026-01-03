@@ -12,8 +12,8 @@ import {
   DataPipelineMetrics,
   Recommendation,
   AlertLevel
-} from '@/types/IFiveDimensionalManagement';
-import { Logger } from '@/utils/Logger';
+} from '../types/IFiveDimensionalManagement';
+import { Logger } from '../utils/Logger';
 
 /**
  * Data Dimension - Manages data quality, governance, and analytics

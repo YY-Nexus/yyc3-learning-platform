@@ -13,8 +13,8 @@ import {
   UserEngagementMetrics,
   Recommendation,
   AlertLevel
-} from '@/types/IFiveDimensionalManagement';
-import { Logger } from '@/utils/Logger';
+} from '../types/IFiveDimensionalManagement';
+import { Logger } from '../utils/Logger';
 
 /**
  * UX Dimension - Manages user experience, accessibility, and satisfaction

@@ -1,6 +1,6 @@
 import { EventEmitter } from 'eventemitter3';
-import { ManagementConfig, Alert } from '@/types/IFiveDimensionalManagement';
-import { Logger } from '@/utils/Logger';
+import { ManagementConfig, Alert } from '../types/IFiveDimensionalManagement';
+import { Logger } from '../utils/Logger';
 
 export class AlertManager extends EventEmitter {
   private config: ManagementConfig;

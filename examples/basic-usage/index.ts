@@ -19,28 +19,63 @@ async function basicUsageExample() {
     const apiKey = process.env.YYC3_API_KEY || 'your-api-key';
 
     const aiEngine = new AutonomousAIEngine({
-      apiKey,
-      model: 'gpt-4',
-      maxTokens: 2000,
-      temperature: 0.7
+      maxConcurrentTasks: 10,
+      resourceLimits: {
+        maxMemory: 1024 * 1024 * 1024,
+        maxCPU: 80,
+        maxNetwork: 1000
+      },
+      learningConfig: {
+        enabled: true,
+        adaptationRate: 0.1,
+        knowledgeRetention: 0.9
+      },
+      decisionMakingConfig: {
+        timeout: 30000,
+        confidenceThreshold: 0.7
+      },
+      collaborationConfig: {
+        enabled: true,
+        maxCollaborators: 5
+      },
+      monitoringConfig: {
+        enabled: true,
+        metricsInterval: 60000
+      },
+      securityConfig: {
+        level: 'standard',
+        accessControl: true,
+        encryptionEnabled: true,
+        auditLog: true
+      },
+      integrationConfig: {
+        enabled: true,
+        endpoints: []
+      },
+      modelAdapterConfig: {
+        apiKey,
+        model: 'gpt-4',
+        provider: 'openai'
+      }
     });
 
     console.log('✅ 自主AI引擎初始化成功');
 
-    const modelAdapter = new ModelAdapter({
-      provider: 'openai',
-      apiKey,
-      model: 'gpt-4'
-    });
+    const modelAdapter = new ModelAdapter();
 
     console.log('✅ 模型适配器初始化成功');
 
     const fiveDimManagement = new FiveDimensionalManagement({
-      dataDimension: { enabled: true },
-      goalDimension: { enabled: true },
-      technologyDimension: { enabled: true },
-      uxDimension: { enabled: true },
-      valueDimension: { enabled: true }
+      systemId: 'yyc3-learning-platform',
+      organizationId: 'yyc3-org',
+      environment: 'development',
+      dimensions: {
+        goal: { enabled: true, priority: 1 },
+        technology: { enabled: true, priority: 2 },
+        data: { enabled: true, priority: 3 },
+        ux: { enabled: true, priority: 4 },
+        value: { enabled: true, priority: 5 }
+      }
     });
 
     console.log('✅ 五维管理系统初始化成功');

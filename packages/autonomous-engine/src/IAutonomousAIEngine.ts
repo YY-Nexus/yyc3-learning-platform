@@ -44,6 +44,20 @@ export interface IAutonomousAIEngine {
   // === 自主决策 ===
   makeDecision(_context: DecisionContext, _options: DecisionOption[]): Promise<Decision>;
   evaluateDecision(_decisionId: string): Promise<DecisionEvaluation>;
+  reason(_params: {
+    context: string;
+    constraints: readonly string[];
+    objectives: readonly string[];
+    options?: {
+      depth?: 'shallow' | 'deep';
+      timeout?: number;
+      includeAlternatives?: boolean;
+    };
+  }): Promise<{
+    reasoning: string;
+    alternatives?: string[];
+    confidence: number;
+  }>;
 
   // === 学习与适应 ===
   learnFromExperience(_experience: Experience): Promise<void>;
@@ -101,6 +115,7 @@ export interface EngineConfiguration {
   monitoringConfig: MonitoringConfiguration;
   securityConfig: SecurityConfiguration;
   integrationConfig: IntegrationConfiguration;
+  modelAdapterConfig?: any;
 }
 
 // === 事件系统 ===

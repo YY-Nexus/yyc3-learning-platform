@@ -109,28 +109,28 @@ export default function AnalyticsPage() {
         <div className="flex items-center space-x-2 mb-6">
           <span className="text-sm font-medium text-gray-700">时间范围:</span>
           <Button 
-            variant={timeRange === '7d' ? 'solid' : 'outline'} 
+            variant={timeRange === '7d' ? 'default' : 'outline'} 
             size="sm" 
             onClick={() => setTimeRange('7d')}
           >
             7天
           </Button>
           <Button 
-            variant={timeRange === '30d' ? 'solid' : 'outline'} 
+            variant={timeRange === '30d' ? 'default' : 'outline'} 
             size="sm" 
             onClick={() => setTimeRange('30d')}
           >
             30天
           </Button>
           <Button 
-            variant={timeRange === '90d' ? 'solid' : 'outline'} 
+            variant={timeRange === '90d' ? 'default' : 'outline'} 
             size="sm" 
             onClick={() => setTimeRange('90d')}
           >
             90天
           </Button>
           <Button 
-            variant={timeRange === 'all' ? 'solid' : 'outline'} 
+            variant={timeRange === 'all' ? 'default' : 'outline'} 
             size="sm" 
             onClick={() => setTimeRange('all')}
           >
@@ -235,7 +235,7 @@ export default function AnalyticsPage() {
             <h2 className="text-xl font-bold text-gray-800">学习时长趋势</h2>
             <div className="flex space-x-2">
               <Button variant="outline" size="sm">日</Button>
-              <Button variant="solid" size="sm">周</Button>
+              <Button variant="default" size="sm">周</Button>
               <Button variant="outline" size="sm">月</Button>
             </div>
           </div>
@@ -377,7 +377,7 @@ export default function AnalyticsPage() {
             <h2 className="text-xl font-bold text-gray-800">学习效率分析</h2>
             <div className="flex space-x-2">
               <Button variant="outline" size="sm">周</Button>
-              <Button variant="solid" size="sm">月</Button>
+              <Button variant="default" size="sm">月</Button>
               <Button variant="outline" size="sm">季度</Button>
             </div>
           </div>

@@ -27,7 +27,8 @@ import {
   KnowledgeExport,
   LearningError,
   LayerStatus,
-  TimeRange
+  TimeRange,
+  ExportFormat
 } from './ILearningSystem';
 import { BehavioralLearningLayer } from './layers/BehavioralLearningLayer';
 import { StrategicLearningLayer } from './layers/StrategicLearningLayer';
@@ -172,7 +173,6 @@ export class LearningSystem extends EventEmitter implements ILearningSystem {
       // Clear monitoring
       if (this._metricsInterval) {
         clearInterval(this._metricsInterval);
-        this._metricsInterval = undefined;
       }
 
       this._status = 'suspended';
@@ -226,7 +226,14 @@ export class LearningSystem extends EventEmitter implements ILearningSystem {
         layer: 'integration',
         severity: 'high',
         message: `Learning failed: ${(error as Error).message}`,
-        context: { experienceId: experience.id }
+        context: {
+          id: learningId,
+          type: 'learning',
+          description: 'Learning process error',
+          timestamp: Date.now(),
+          stackTrace: (error as Error).stack || '',
+          environment: { experienceId: experience.id }
+        }
       });
       throw error;
     } finally {
@@ -244,16 +251,29 @@ export class LearningSystem extends EventEmitter implements ILearningSystem {
       await this.validateAdaptationStrategy(newStrategy);
 
       // Apply to strategic layer
-      await this._strategicLayer.adaptStrategy(newStrategy);
+      const strategyUpdate = {
+        id: newStrategy.id,
+        updates: newStrategy.changes,
+        timestamp: Date.now(),
+        reason: newStrategy.rationale
+      };
+      await this._strategicLayer.updateStrategy(newStrategy.id, strategyUpdate);
 
       // Update behavioral patterns if needed
       if (newStrategy.behavioralImpact) {
-        await this._behavioralLayer.adaptBehavioralResponses();
+        await this._behavioralLayer.optimizeBehavioralResponses();
       }
 
       // Update knowledge if needed
       if (newStrategy.knowledgeImpact) {
-        await this._knowledgeLayer.updateKnowledge(newStrategy.knowledgeImpact);
+        const knowledgeUpdate: KnowledgeUpdate = {
+          id: this.generateId(),
+          knowledgeId: newStrategy.id,
+          updates: { adaptation: newStrategy.id },
+          timestamp: Date.now(),
+          source: 'strategy_adaptation'
+        };
+        await this._knowledgeLayer.updateKnowledge(knowledgeUpdate.id, knowledgeUpdate);
       }
 
       this.emit('adapted', newStrategy);
@@ -265,7 +285,14 @@ export class LearningSystem extends EventEmitter implements ILearningSystem {
         layer: 'strategic',
         severity: 'medium',
         message: `Strategy adaptation failed: ${(error as Error).message}`,
-        context: { strategyId: newStrategy.id }
+        context: {
+          id: this.generateId(),
+          type: 'strategy_adaptation',
+          description: 'Strategy adaptation error',
+          timestamp: Date.now(),
+          stackTrace: (error as Error).stack || '',
+          environment: { strategyId: newStrategy.id }
+        }
       });
       throw error;
     }
@@ -280,7 +307,7 @@ export class LearningSystem extends EventEmitter implements ILearningSystem {
       await this._knowledgeLayer.updateKnowledge(knowledge.id, knowledge);
 
       // Trigger learning if significant update
-      if (knowledge.significance === 'high') {
+      if (knowledge.significance && knowledge.significance > 0.7) {
         await this.triggerLearningFromKnowledge(knowledge);
       }
 
@@ -293,7 +320,14 @@ export class LearningSystem extends EventEmitter implements ILearningSystem {
         layer: 'knowledge',
         severity: 'medium',
         message: `Knowledge update failed: ${(error as Error).message}`,
-        context: { knowledgeId: knowledge.id }
+        context: {
+          id: this.generateId(),
+          type: 'knowledge_update',
+          description: 'Knowledge update error',
+          timestamp: Date.now(),
+          stackTrace: (error as Error).stack || '',
+          environment: { knowledgeId: knowledge.id }
+        }
       });
       throw error;
     }
@@ -317,7 +351,14 @@ export class LearningSystem extends EventEmitter implements ILearningSystem {
         layer: 'behavioral',
         severity: 'low',
         message: `Behavior recording failed: ${(error as Error).message}`,
-        context: { behaviorId: behavior.id }
+        context: {
+          id: this.generateId(),
+          type: 'behavior_recording',
+          description: 'Behavior recording error',
+          timestamp: Date.now(),
+          stackTrace: (error as Error).stack || '',
+          environment: { behaviorId: behavior.id }
+        }
       });
     }
   }
@@ -334,7 +375,7 @@ export class LearningSystem extends EventEmitter implements ILearningSystem {
    * Predict behavior based on context
    * 基于上下文预测行为
    */
-  async predictBehavior(context: any): Promise<any> {
+  async predictBehavior(context: BehaviorContext): Promise<BehaviorPrediction> {
     return await this._behavioralLayer.predictBehavior(context);
   }
 
@@ -342,7 +383,7 @@ export class LearningSystem extends EventEmitter implements ILearningSystem {
    * Update strategic goals
    * 更新战略目标
    */
-  async updateStrategicGoals(goals: any[]): Promise<void> {
+  async updateStrategicGoals(goals: StrategicGoal[]): Promise<void> {
     return await this._strategicLayer.setGoals(goals);
   }
 
@@ -351,23 +392,41 @@ export class LearningSystem extends EventEmitter implements ILearningSystem {
    * 评估策略
    */
   async evaluateStrategies(): Promise<any[]> {
-    const strategies = await this._strategicLayer.evaluateStrategies();
-    return strategies;
+    // Get all strategies from the strategic layer
+    const strategies = this._strategicLayer.strategies;
+    
+    // Evaluate each strategy
+    const evaluations = await Promise.all(
+      strategies.map((strategy: Strategy) => 
+        this._strategicLayer.evaluateStrategy(strategy.id)
+      )
+    );
+    
+    return evaluations;
   }
 
   /**
    * Optimize strategy
    * 优化策略
    */
-  async optimizeStrategy(): Promise<any> {
-    return await this._strategicLayer.optimizeStrategy();
+  async optimizeStrategy(strategyId?: string): Promise<any> {
+    // If no strategy ID provided, get the first available strategy
+    if (!strategyId) {
+      const strategies = this._strategicLayer.strategies;
+      if (!strategies || strategies.length === 0 || !strategies[0]) {
+        throw new Error('No strategies available to optimize');
+      }
+      strategyId = strategies[0].id;
+    }
+    
+    return await this._strategicLayer.optimizeStrategy(strategyId);
   }
 
   /**
    * Acquire new knowledge
    * 获取新知识
    */
-  async acquireKnowledge(knowledge: any): Promise<void> {
+  async acquireKnowledge(knowledge: KnowledgeItem): Promise<void> {
     return await this._knowledgeLayer.acquireKnowledge(knowledge);
   }
 
@@ -375,7 +434,7 @@ export class LearningSystem extends EventEmitter implements ILearningSystem {
    * Reason with knowledge
    * 使用知识推理
    */
-  async reasonWithKnowledge(query: any): Promise<any> {
+  async reasonWithKnowledge(query: ReasoningQuery): Promise<ReasoningResult> {
     return await this._knowledgeLayer.reason(query);
   }
 
@@ -383,7 +442,7 @@ export class LearningSystem extends EventEmitter implements ILearningSystem {
    * Generalize knowledge from patterns
    * 从模式中泛化知识
    */
-  async generalizeKnowledge(patterns: any[]): Promise<any> {
+  async generalizeKnowledge(patterns: KnowledgePattern[]): Promise<GeneralizationResult> {
     return await this._knowledgeLayer.generalizeKnowledge(patterns);
   }
 
@@ -409,9 +468,9 @@ export class LearningSystem extends EventEmitter implements ILearningSystem {
       const startTime = Date.now();
 
       // Collect layer states
-      const behavioralState = await this._behavioralLayer.getMetrics();
-      const strategicState = await this._strategicLayer.getMetrics();
-      const knowledgeState = await this._knowledgeLayer.getMetrics();
+      const behavioralState = this._behavioralLayer.metrics;
+      const strategicState = this._strategicLayer.metrics;
+      const knowledgeState = this._knowledgeLayer.metrics;
 
       // Identify conflicts and opportunities
       const conflicts = await this.identifyLayerConflicts();
@@ -430,20 +489,19 @@ export class LearningSystem extends EventEmitter implements ILearningSystem {
       this._lastSynchronization = Date.now();
 
       return {
-        success: true,
-        duration: Date.now() - startTime,
+        id: this.generateId(),
+        timestamp: Date.now(),
+        synchronizedLayers: ['behavioral', 'strategic', 'knowledge'],
         conflictsResolved: conflicts.length,
-        opportunitiesExploited: opportunities.length,
-        timestamp: Date.now()
+        status: 'success'
       };
     } catch (error) {
       return {
-        success: false,
-        duration: 0,
-        conflictsResolved: 0,
-        opportunitiesExploited: 0,
+        id: this.generateId(),
         timestamp: Date.now(),
-        error: (error as Error).message
+        synchronizedLayers: [],
+        conflictsResolved: 0,
+        status: 'failed'
       };
     }
   }
@@ -466,21 +524,30 @@ export class LearningSystem extends EventEmitter implements ILearningSystem {
       // Apply optimizations
       const results = await this.applyOptimizations(optimizations);
 
+      const performanceImprovement = this.calculatePerformanceImprovement(currentMetrics);
+
       return {
-        success: true,
-        duration: Date.now() - startTime,
-        optimizationsApplied: results.length,
-        performanceImprovement: this.calculatePerformanceImprovement(currentMetrics),
-        timestamp: Date.now()
+        id: this.generateId(),
+        timestamp: Date.now(),
+        layerImprovements: {
+          behavioral: performanceImprovement * 0.3,
+          strategic: performanceImprovement * 0.4,
+          knowledge: performanceImprovement * 0.3
+        },
+        crossLayerImprovements: performanceImprovement,
+        resourceSavings: results.length * 10
       };
     } catch (error) {
       return {
-        success: false,
-        duration: 0,
-        optimizationsApplied: 0,
-        performanceImprovement: 0,
+        id: this.generateId(),
         timestamp: Date.now(),
-        error: (error as Error).message
+        layerImprovements: {
+          behavioral: 0,
+          strategic: 0,
+          knowledge: 0
+        },
+        crossLayerImprovements: 0,
+        resourceSavings: 0
       };
     }
   }
@@ -519,12 +586,24 @@ export class LearningSystem extends EventEmitter implements ILearningSystem {
     };
   }
 
+  getLearningData(): LearningSystemMetrics {
+    return {
+      timestamp: Date.now(),
+      totalExperiences: this.metrics.totalExperiences,
+      totalLearnings: this.metrics.totalLearnings,
+      averageLearningRate: this.metrics.averageLearningRate,
+      systemPerformance: this.metrics.systemPerformance,
+      layerMetrics: this.getLayerMetrics(),
+      crossLayerMetrics: this.metrics.crossLayerMetrics
+    };
+  }
+
   /**
    * Export knowledge
    * 导出知识
    */
-  async exportKnowledge(): Promise<KnowledgeExport> {
-    return await this._knowledgeLayer.exportKnowledge('json');
+  async exportKnowledge(format: ExportFormat = { type: 'json' }): Promise<KnowledgeExport> {
+    return await this._knowledgeLayer.exportKnowledge(format);
   }
 
   /**
@@ -536,12 +615,12 @@ export class LearningSystem extends EventEmitter implements ILearningSystem {
   }
 
   // Event handling
-  on(event: 'learned', listener: (result: LearningResult) => void): void;
-  on(event: 'adapted', listener: (strategy: AdaptationStrategy) => void): void;
-  on(event: 'insight', listener: (insight: CrossLayerInsight) => void): void;
-  on(event: 'error', listener: (error: LearningError) => void): void;
-  on(event: string, listener: (...args: any[]) => void): void {
-    super.on(event, listener);
+  override on(event: 'learned', listener: (result: LearningResult) => void): this;
+  override on(event: 'adapted', listener: (strategy: AdaptationStrategy) => void): this;
+  override on(event: 'insight', listener: (insight: CrossLayerInsight) => void): this;
+  override on(event: 'error', listener: (error: LearningError) => void): this;
+  override on(event: string, listener: (...args: unknown[]) => void): this {
+    return super.on(event, listener);
   }
 
   // Private helper methods
@@ -634,9 +713,11 @@ export class LearningSystem extends EventEmitter implements ILearningSystem {
             retention: 365
           },
           dataClassification: {
+            id: 'default-classification',
+            name: 'Default Data Classification',
+            description: 'Default data classification policy',
             levels: ['public', 'internal', 'confidential', 'secret'],
-            defaultLevel: 'internal',
-            automaticClassification: true
+            rules: {}
           }
         },
         authentication: {
@@ -669,10 +750,12 @@ export class LearningSystem extends EventEmitter implements ILearningSystem {
       totalLearnings: 0,
       averageLearningRate: 0,
       systemPerformance: {
-        responseTime: 0,
-        throughput: 0,
-        accuracy: 0,
-        reliability: 0
+        id: this.generateId(),
+        cpuUsage: 0,
+        memoryUsage: 0,
+        diskUsage: 0,
+        networkUsage: 0,
+        responseTime: 0
       },
       layerMetrics: {
         behavioral: {
@@ -712,20 +795,20 @@ export class LearningSystem extends EventEmitter implements ILearningSystem {
   }
 
   private setupLayerEventHandlers(): void {
-    this._behavioralLayer.on('pattern_discovered', (pattern) => {
+    this._behavioralLayer.on('pattern', (pattern) => {
       this.handleBehavioralInsight(pattern);
     });
 
-    this._strategicLayer.on('strategy_updated', (strategy) => {
+    this._strategicLayer.on('strategy', (strategy) => {
       this.handleStrategicInsight(strategy);
     });
 
-    this._knowledgeLayer.on('knowledge_updated', (knowledge) => {
+    this._knowledgeLayer.on('knowledge', (knowledge) => {
       this.handleKnowledgeInsight(knowledge);
     });
   }
 
-  private setupIntegration(config: any): void {
+  private setupIntegration(config: ConfigObject): void {
     // Setup integration logic
     if (config.synchronizationFrequency > 0) {
       setInterval(() => {
@@ -734,7 +817,7 @@ export class LearningSystem extends EventEmitter implements ILearningSystem {
     }
   }
 
-  private startMonitoring(config: any): void {
+  private startMonitoring(config: ConfigObject): void {
     if (config.metricsInterval > 0) {
       this._metricsInterval = setInterval(() => {
         this.updateMetrics();
@@ -762,36 +845,41 @@ export class LearningSystem extends EventEmitter implements ILearningSystem {
     return {
       experienceId: experience.id,
       timestamp: Date.now(),
-      behavioralLearnings,
-      strategicLearnings,
-      knowledgeLearnings,
+      behavioralLearnings: Array.isArray(behavioralLearnings) ? behavioralLearnings : [],
+      strategicLearnings: Array.isArray(strategicLearnings) ? strategicLearnings : [],
+      knowledgeLearnings: Array.isArray(knowledgeLearnings) ? knowledgeLearnings : [],
       confidence,
       applicability
     };
   }
 
   private calculateLearningConfidence(
-    behavioral: any[],
-    strategic: any[],
-    knowledge: any[]
+    behavioral: BehavioralMetrics,
+    strategic: StrategicMetrics,
+    knowledge: KnowledgeMetrics
   ): number {
     const weights = { behavioral: 0.3, strategic: 0.4, knowledge: 0.3 };
+    
+    const behavioralArray = Array.isArray(behavioral) ? behavioral : [];
+    const strategicArray = Array.isArray(strategic) ? strategic : [];
+    const knowledgeArray = Array.isArray(knowledge) ? knowledge : [];
+    
     const scores = [
-      this.calculateLayerConfidence(behavioral),
-      this.calculateLayerConfidence(strategic),
-      this.calculateLayerConfidence(knowledge)
+      this.calculateLayerConfidence(behavioralArray),
+      this.calculateLayerConfidence(strategicArray),
+      this.calculateLayerConfidence(knowledgeArray)
     ];
 
     return Object.values(weights).reduce((sum, weight, index) =>
-      sum + weight * scores[index], 0);
+      sum + weight * (scores[index] || 0), 0);
   }
 
-  private calculateLayerConfidence(learnings: any[]): number {
+  private calculateLayerConfidence(learnings: unknown[]): number {
     if (learnings.length === 0) return 0;
     return learnings.reduce((sum, learning) => sum + learning.confidence, 0) / learnings.length;
   }
 
-  private calculateApplicabilityScope(experience: LearningExperience): any {
+  private calculateApplicabilityScope(experience: LearningExperience): ApplicabilityScope {
     return {
       domains: this.extractDomains(experience),
       contexts: this.extractContexts(experience),
@@ -894,11 +982,11 @@ export class LearningSystem extends EventEmitter implements ILearningSystem {
     return [];
   }
 
-  private async resolveLayerConflict(conflict: any): Promise<void> {
+  private async resolveLayerConflict(conflict: LayerConflict): Promise<void> {
     // Resolve layer conflicts
   }
 
-  private async exploitLayerOpportunity(opportunity: any): Promise<void> {
+  private async exploitLayerOpportunity(opportunity: LayerOpportunity): Promise<void> {
     // Exploit layer opportunities
   }
 
@@ -907,12 +995,12 @@ export class LearningSystem extends EventEmitter implements ILearningSystem {
     return [];
   }
 
-  private async generateOptimizations(bottlenecks: any[]): Promise<any[]> {
+  private async generateOptimizations(bottlenecks: Bottleneck[]): Promise<Optimization[]> {
     // Generate optimizations for bottlenecks
     return [];
   }
 
-  private async applyOptimizations(optimizations: any[]): Promise<any[]> {
+  private async applyOptimizations(optimizations: Optimization[]): Promise<OptimizationResult[]> {
     // Apply optimizations
     return [];
   }
@@ -922,19 +1010,19 @@ export class LearningSystem extends EventEmitter implements ILearningSystem {
     return 0;
   }
 
-  private checkAlertThresholds(thresholds: any[]): void {
+  private checkAlertThresholds(thresholds: AlertThreshold[]): void {
     // Check if any alert thresholds are exceeded
   }
 
-  private handleBehavioralInsight(insight: any): void {
+  private handleBehavioralInsight(insight: BehavioralInsight): void {
     // Handle behavioral insights
   }
 
-  private handleStrategicInsight(insight: any): void {
+  private handleStrategicInsight(insight: StrategicInsight): void {
     // Handle strategic insights
   }
 
-  private handleKnowledgeInsight(insight: any): void {
+  private handleKnowledgeInsight(insight: KnowledgeInsight): void {
     // Handle knowledge insights
   }
 }

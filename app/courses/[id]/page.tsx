@@ -30,7 +30,7 @@ import { courseData } from "@/data/course-data"
 
 export default function CourseDetailPage() {
   const params = useParams()
-  const courseId = Number(params.id)
+  const courseId = params.id as string
   const course = courseData.find((c) => c.id === courseId)
 
   const [isExpanded, setIsExpanded] = useState(false)

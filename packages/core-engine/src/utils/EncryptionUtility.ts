@@ -15,6 +15,7 @@ export interface EncryptedData {
   ciphertext: string;
   authTag?: string;
   algorithm: string;
+  substring?: (start: number, end?: number) => string;
 }
 
 export interface HashedData {

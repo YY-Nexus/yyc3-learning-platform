@@ -3,7 +3,6 @@
 import type React from "react"
 import { useState, useEffect, useCallback, createContext } from "react"
 import type { User, ApiResponse, CourseProgress } from "@/app/types"
-import { logger } from "@/lib/logger"
 
 interface UserContextType {
   user: User | null
@@ -40,7 +39,7 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : "网络错误"
       setError(errorMessage)
-      logger.error("获取用户信息失败:", err)
+      console.error("获取用户信息失败:", err)
     } finally {
       setLoading(false)
     }
@@ -70,7 +69,7 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : "更新失败"
       setError(errorMessage)
-      logger.error("更新用户信息失败:", err)
+      console.error("更新用户信息失败:", err)
       return false
     }
   }, [])
@@ -103,7 +102,7 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : "更新失败"
       setError(errorMessage)
-      logger.error("更新学习进度失败", err)
+      console.error("更新学习进度失败", err)
       return false
     }
   }, [])
@@ -134,7 +133,7 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : "更新失败"
       setError(errorMessage)
-      logger.error("更新学习连续天数失败:", err)
+      console.error("更新学习连续天数失败:", err)
       return false
     }
   }, [])
@@ -202,6 +201,45 @@ export function useUser() {
           studyDays: 77,
           completedCourses: 12,
           studyHours: 156,
+          level: "beginner",
+          points: 1500,
+          streak: 15,
+          joinDate: "2024-01-15",
+          certificates: 3,
+          rank: 42,
+          profile: {
+            bio: "",
+            location: "",
+            website: "",
+            github: "",
+            linkedin: ""
+          },
+          learningStats: {
+            totalCourses: 15,
+            completedCourses: 12,
+            totalHours: 156,
+            currentStreak: 15,
+            longestStreak: 30,
+            averageScore: 85.5
+          },
+          enrolledCourses: [],
+          achievements: [],
+          preferences: {
+            language: "zh-CN",
+            timezone: "Asia/Shanghai",
+            emailNotifications: true,
+            pushNotifications: true,
+            weeklyReport: true,
+            theme: "system",
+            learningReminder: {
+              enabled: true,
+              time: "09:00",
+              days: ["周一", "周二", "周三", "周四", "周五"]
+            },
+            notifications: true,
+            emailUpdates: true
+          },
+          progress: {}
         }
 
         setUser(userData)
@@ -221,7 +259,14 @@ export function useUser() {
     }
   }
 
-  return { user, loading, error, updateUser }
+  const logout = () => {
+    setUser(null)
+    setError(null)
+    localStorage.removeItem("user-token")
+    localStorage.removeItem("user-preferences")
+  }
+
+  return { user, loading, error, updateUser, logout }
 }
 
 // 用户认证状态Hook
@@ -304,7 +349,7 @@ export function useUserStats() {
     totalPoints: user?.studyPoints || 0,
     currentStreak: user?.studyDays || 0,
     totalStudyTime: user?.studyHours || 0,
-    certificates: user?.certificates.length || 0,
+    certificates: user?.certificates || 0,
   }
 
   const completionRate = stats.totalCourses > 0 ? (stats.completedCourses / stats.totalCourses) * 100 : 0

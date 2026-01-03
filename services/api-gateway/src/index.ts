@@ -397,6 +397,71 @@ export class APIGateway {
     next();
   }
 
+  // ==================== 事件订阅 ====================
+
+  private setupEventSubscriptions(): void {
+    // 订阅学习系统事件
+    if (learningSystem) {
+      learningSystem.on('learned', (result) => {
+        logger.info('[Learning] New learning result:', result);
+      });
+
+      learningSystem.on('adapted', (strategy) => {
+        logger.info('[Learning] Strategy adapted:', strategy);
+      });
+
+      learningSystem.on('insight', (insight) => {
+        logger.info('[Learning] New insight:', insight);
+      });
+
+      learningSystem.on('error', (error) => {
+        logger.error('[Learning] Error:', error);
+      });
+    }
+  }
+
+  // ==================== 服务代理 ====================
+
+  private async proxyToDataService(req: AuthenticatedRequest, res: Response): Promise<void> {
+    try {
+      const url = `${this.serviceUrls.dataService}${req.path}`;
+      const response = await fetch(url, {
+        method: req.method,
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': req.headers.authorization || ''
+        },
+        body: req.method !== 'GET' ? JSON.stringify(req.body) : undefined
+      });
+
+      const data = await response.json();
+      res.status(response.status).json(data);
+    } catch (error: any) {
+      logger.error('[Proxy] Data service error:', error);
+      res.status(500).json({ error: '数据服务不可用' });
+    }
+  }
+
+  private async proxyToAIEngine(req: AuthenticatedRequest, res: Response): Promise<void> {
+    try {
+      const url = `${this.serviceUrls.aiEngine}${req.path}`;
+      const response = await fetch(url, {
+        method: req.method,
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': req.headers.authorization || ''
+        },
+        body: JSON.stringify(req.body)
+      });
+
+      const data = await response.json();
+      res.status(response.status).json(data);
+    } catch (error: any) {
+      logger.error('[Proxy] AI engine error:', error);
+      res.status(500).json({ error: 'AI引擎服务不可用' });
+    }
+  }
+
   private errorHandler(err: Error, req: Request, res: Response, next: NextFunction): void {
     logger.error('[Error]', err);
 

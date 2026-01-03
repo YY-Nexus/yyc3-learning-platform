@@ -14,11 +14,6 @@ export type {
   AutonomousAIEngine, FiveDimensionalManagement, LearningSystem, ModelAdapter
 } from '@yyc3/five-dimensional-management';
 
-// Utility exports
-export { default as WidgetProvider } from './components/WidgetProvider';
-export { default as useWidget } from './hooks/useWidget';
-export { default as WidgetUtils } from './utils/WidgetUtils';
-
 // ============================================================================
 // Factory Functions
 // ============================================================================

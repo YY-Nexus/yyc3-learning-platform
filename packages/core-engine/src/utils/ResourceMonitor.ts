@@ -11,7 +11,7 @@ import { EventEmitter } from 'eventemitter3';
 import * as fs from 'fs/promises';
 import * as os from 'os';
 import * as path from 'path';
-import { createLogger } from '../../../../lib/logger';
+import { createLogger } from './logger';
 
 const logger = createLogger('ResourceMonitor');
 

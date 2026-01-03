@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useDrag, useDrop } from 'react-dnd';
 import { useTheme } from '../contexts/ThemeContext';
 import { PositionOptimizer, WidgetPosition } from '../systems/PositionOptimizer';
-import { createLogger } from '../../../lib/logger';
+import { createLogger } from '../../../../lib/logger';
 
 const logger = createLogger('IntelligentAIWidget');
 // ModelAdapter相关配置接口

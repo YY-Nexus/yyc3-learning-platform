@@ -13,8 +13,8 @@ import {
   InnovationMetrics,
   Recommendation,
   AlertLevel
-} from '@/types/IFiveDimensionalManagement';
-import { Logger } from '@/utils/Logger';
+} from '../types/IFiveDimensionalManagement';
+import { Logger } from '../utils/Logger';
 
 /**
  * Value Dimension - Manages business value, ROI, and strategic impact

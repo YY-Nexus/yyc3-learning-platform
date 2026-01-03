@@ -1,5 +1,5 @@
-import { ManagementConfig, ManagementMetrics, DashboardData } from '@/types/IFiveDimensionalManagement';
-import { Logger } from '@/utils/Logger';
+import { ManagementConfig, ManagementMetrics, DashboardData } from '../types/IFiveDimensionalManagement';
+import { Logger } from '../utils/Logger';
 
 export class MetricsCollector {
   private config: ManagementConfig;

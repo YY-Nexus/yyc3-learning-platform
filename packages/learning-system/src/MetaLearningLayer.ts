@@ -165,10 +165,16 @@ export class MetaLearningLayer {
     let value = 0;
 
     for (const [key, weight] of this.currentPolicy.weights) {
-      const featureIndex = parseInt(key.split('_')[1]);
-      if (featureIndex < features.length) {
-        value += weight * features[featureIndex];
-      }
+      const parts = key.split('_');
+      if (parts.length < 2 || !parts[1]) continue;
+      
+      const featureIndex = parseInt(parts[1]);
+      if (isNaN(featureIndex) || featureIndex < 0 || featureIndex >= features.length) continue;
+      
+      const featureValue = features[featureIndex];
+      if (featureValue === undefined || featureValue === null) continue;
+      
+      value += weight * featureValue;
     }
 
     return value;
@@ -377,7 +383,8 @@ export class MetaLearningLayer {
   private exploreAction(state: State): Action {
     // 随机探索
     const actionTypes = ['search', 'analyze', 'generate', 'transform'];
-    const randomType = actionTypes[Math.floor(Math.random() * actionTypes.length)];
+    const randomIndex = Math.floor(Math.random() * actionTypes.length);
+    const randomType = actionTypes[randomIndex] || 'search';
 
     return {
       type: randomType,
@@ -412,7 +419,10 @@ export class MetaLearningLayer {
 
     for (let i = 0; i < Math.min(this.config.batchSize, bufferSize); i++) {
       const index = Math.floor(Math.random() * bufferSize);
-      batch.push(this.experienceBuffer[index]);
+      const experience = this.experienceBuffer[index];
+      if (experience) {
+        batch.push(experience);
+      }
     }
 
     return batch;

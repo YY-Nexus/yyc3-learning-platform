@@ -5,7 +5,7 @@
  */
 
 import { EventEmitter } from 'events';
-import { createLogger } from '@yyc3/ai-engine/src/utils/logger';
+import { createLogger } from '../../yyc3-ai-engine/src/utils/logger';
 
 const logger = createLogger('EnterpriseDataService');
 

@@ -25,6 +25,8 @@ export interface ModelConfig {
   capabilities: ModelCapabilities;
   limits?: ModelLimits;
   pricing?: ModelPricing;
+  maxTokens?: number;
+  temperature?: number;
 }
 
 export interface ModelCapabilities {
@@ -454,6 +456,43 @@ export interface IModelAdapter {
   processRequest(request: ModelRequest): Promise<ModelResponse>;
   processStreamingRequest(request: ModelRequest, onChunk: (chunk: ModelResponse) => void): Promise<void>;
   cancelRequest(requestId: string): Promise<void>;
+
+  // Convenience Methods
+  generateText(options: {
+    id?: string;
+    taskType?: TaskType;
+    prompt: string;
+    systemPrompt?: string;
+    temperature?: number;
+    maxTokens?: number;
+    metadata?: RequestMetadata;
+  }): Promise<ModelResponse>;
+  generate(options: {
+    prompt: string;
+    maxTokens?: number;
+    temperature?: number;
+    model?: string;
+    systemPrompt?: string;
+  }): Promise<{ text: string; usage?: any }>;
+  generateStream(
+    options: {
+      prompt: string;
+      maxTokens?: number;
+      temperature?: number;
+      model?: string;
+      systemPrompt?: string;
+    },
+    onChunk: (chunk: string) => void
+  ): Promise<void>;
+  generateStream(
+    options: {
+      prompt: string;
+      maxTokens?: number;
+      temperature?: number;
+      model?: string;
+      systemPrompt?: string;
+    }
+  ): AsyncIterable<{ text: string }>;
 
   // Health and Monitoring
   healthCheck(): Promise<Record<string, ModelHealthCheck>>;

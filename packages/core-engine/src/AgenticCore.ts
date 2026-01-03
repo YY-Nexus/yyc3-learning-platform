@@ -5,7 +5,7 @@
 import { EventEmitter } from 'events';
 import { ModelAdapter } from '@yyc3/model-adapter';
 import { ModelConfig, ModelRequest, ModelResponse, TaskType, ModelHealthCheck, ErrorEvent, ContentBlock } from '@yyc3/model-adapter';
-import { createLogger } from '../../../lib/logger';
+import { createLogger } from './utils/logger';
 
 const logger = createLogger('AgenticCore');
 

@@ -34,6 +34,7 @@ import { AccessibleButton } from "@/components/accessibility/accessible-button"
 
 export default function EditProfilePage() {
   const [currentUser] = useState({
+    id: "1",
     name: "YanYu同学",
     email: "yanyu@smartcloud.com",
     avatar: "/placeholder.svg?height=80&width=80&text=YY",
@@ -43,6 +44,34 @@ export default function EditProfilePage() {
     company: "YanYu智能科技",
     position: "AI算法工程师",
     skills: ["机器学习", "深度学习", "自然语言处理", "计算机视觉", "Python", "TensorFlow"],
+    level: "advanced",
+    points: 5000,
+    streak: 42,
+    joinDate: "2023-09-15",
+    studyPoints: 2450,
+    studyDays: 77,
+    completedCourses: 12,
+    studyHours: 156,
+    certificates: 5,
+    rank: 3,
+    profile: {
+      bio: "专注于AI技术研发与应用，致力于推动人工智能在各行业的落地实践。",
+      location: "北京市海淀区",
+      website: "",
+      github: "",
+      linkedin: ""
+    },
+    learningStats: {
+      totalCourses: 15,
+      completedCourses: 12,
+      totalHours: 156,
+      currentStreak: 42,
+      longestStreak: 60
+    },
+    enrolledCourses: [],
+    achievements: [],
+    preferences: {},
+    progress: {}
   })
 
   const [formData, setFormData] = useState(currentUser)

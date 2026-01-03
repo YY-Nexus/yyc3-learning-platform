@@ -11,7 +11,6 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import { EventDispatcher, eventDispatcher } from '@/packages/core-engine/src/EventDispatcher';
-import { logger } from '@/lib/logger';
 
 interface PerformanceMetric {
   name: string;
@@ -38,7 +37,6 @@ export async function POST(req: NextRequest) {
       source: 'api-gateway',
       metadata: {
         correlationId: req.headers.get('x-correlation-id') || `perf_${Date.now()}`,
-        timestamp: Date.now(),
       },
     });
 

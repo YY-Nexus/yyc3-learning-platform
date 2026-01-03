@@ -12,10 +12,10 @@ import {
 } from 'lucide-react';
 
 // 集成YYC³核心系统
-import { AutonomousAIEngine } from '@/packages/autonomous-engine/src/core/AutonomousAIEngine';
-import { ModelAdapter } from '@/packages/model-adapter/src/ModelAdapter';
-import { LearningSystem } from '@/packages/learning-system/src/LearningSystem';
-import { createFiveDimensionalManagement } from '@/packages/five-dimensional-management/src/index';
+import { AutonomousAIEngine } from '@yyc3/autonomous-engine';
+import { ModelAdapter } from '@yyc3/model-adapter';
+import { LearningSystem } from '@yyc3/learning-system';
+import { createFiveDimensionalManagement } from '@yyc3/five-dimensional-management';
 
 // ==================== 类型定义 ====================
 

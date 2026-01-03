@@ -34,9 +34,9 @@ describe('EnhancedMessageBus Integration Tests', () => {
         receivedMessages.push(message);
       };
 
-      const subscriptionId = messageBus.subscribe(MessageType.REQUEST, handler);
+      const subscriptionId = messageBus.subscribe(MessageType.TASK_REQUEST, handler);
 
-      const messageId = await messageBus.publish(MessageType.REQUEST, {
+      const messageId = await messageBus.publish(MessageType.TASK_REQUEST, {
         action: 'test',
         data: { key: 'value' }
       });
@@ -65,10 +65,10 @@ describe('EnhancedMessageBus Integration Tests', () => {
         receivedMessages2.push(message);
       };
 
-      messageBus.subscribe(MessageType.REQUEST, handler1);
-      messageBus.subscribe(MessageType.REQUEST, handler2);
+      messageBus.subscribe(MessageType.TASK_REQUEST, handler1);
+      messageBus.subscribe(MessageType.TASK_REQUEST, handler2);
 
-      await messageBus.publish(MessageType.REQUEST, {
+      await messageBus.publish(MessageType.TASK_REQUEST, {
         action: 'test',
         data: { key: 'value' }
       });
@@ -91,11 +91,11 @@ describe('EnhancedMessageBus Integration Tests', () => {
         responseMessages.push(message);
       };
 
-      messageBus.subscribe(MessageType.REQUEST, requestHandler);
-      messageBus.subscribe(MessageType.RESPONSE, responseHandler);
+      messageBus.subscribe(MessageType.TASK_REQUEST, requestHandler);
+      messageBus.subscribe(MessageType.TASK_RESPONSE, responseHandler);
 
-      await messageBus.publish(MessageType.REQUEST, { type: 'request' });
-      await messageBus.publish(MessageType.RESPONSE, { type: 'response' });
+      await messageBus.publish(MessageType.TASK_REQUEST, { type: 'request' });
+      await messageBus.publish(MessageType.TASK_RESPONSE, { type: 'response' });
 
       await new Promise(resolve => setTimeout(resolve, 100));
 
@@ -114,17 +114,17 @@ describe('EnhancedMessageBus Integration Tests', () => {
         processedOrder.push(message.id);
       };
 
-      messageBus.subscribe(MessageType.REQUEST, handler);
+      messageBus.subscribe(MessageType.TASK_REQUEST, handler);
 
-      await messageBus.publish(MessageType.REQUEST, { id: 'low' }, {
+      await messageBus.publish(MessageType.TASK_REQUEST, { id: 'low' }, {
         priority: MessagePriority.LOW
       });
 
-      await messageBus.publish(MessageType.REQUEST, { id: 'high' }, {
+      await messageBus.publish(MessageType.TASK_REQUEST, { id: 'high' }, {
         priority: MessagePriority.HIGH
       });
 
-      await messageBus.publish(MessageType.REQUEST, { id: 'normal' }, {
+      await messageBus.publish(MessageType.TASK_REQUEST, { id: 'normal' }, {
         priority: MessagePriority.NORMAL
       });
 
@@ -144,9 +144,9 @@ describe('EnhancedMessageBus Integration Tests', () => {
         }
       };
 
-      messageBus.subscribe(MessageType.REQUEST, handler);
+      messageBus.subscribe(MessageType.TASK_REQUEST, handler);
 
-      await messageBus.publish(MessageType.REQUEST, { data: 'test' });
+      await messageBus.publish(MessageType.TASK_REQUEST, { data: 'test' });
 
       await new Promise(resolve => setTimeout(resolve, 1000));
 
@@ -160,19 +160,19 @@ describe('EnhancedMessageBus Integration Tests', () => {
         return;
       };
 
-      messageBus.subscribe(MessageType.REQUEST, handler);
+      messageBus.subscribe(MessageType.TASK_REQUEST, handler);
 
-      await messageBus.publish(MessageType.REQUEST, { data: 'test1' });
-      await messageBus.publish(MessageType.REQUEST, { data: 'test2' });
-      await messageBus.publish(MessageType.RESPONSE, { data: 'test3' });
+      await messageBus.publish(MessageType.TASK_REQUEST, { data: 'test1' });
+      await messageBus.publish(MessageType.TASK_REQUEST, { data: 'test2' });
+      await messageBus.publish(MessageType.TASK_RESPONSE, { data: 'test3' });
 
       await new Promise(resolve => setTimeout(resolve, 100));
 
       const metrics = messageBus.getMetrics();
 
       expect(metrics.totalMessages).toBeGreaterThanOrEqual(3);
-      expect(metrics.messagesByType[MessageType.REQUEST]).toBeGreaterThanOrEqual(2);
-      expect(metrics.messagesByType[MessageType.RESPONSE]).toBeGreaterThanOrEqual(1);
+      expect(metrics.messagesByType[MessageType.TASK_REQUEST]).toBeGreaterThanOrEqual(2);
+      expect(metrics.messagesByType[MessageType.TASK_RESPONSE]).toBeGreaterThanOrEqual(1);
     });
   });
 
@@ -186,9 +186,9 @@ describe('EnhancedMessageBus Integration Tests', () => {
         }
       };
 
-      messageBus.subscribe(MessageType.REQUEST, handler);
+      messageBus.subscribe(MessageType.TASK_REQUEST, handler);
 
-      const messageId = await messageBus.publish(MessageType.REQUEST, {
+      const messageId = await messageBus.publish(MessageType.TASK_REQUEST, {
         data: 'test'
       });
 
@@ -212,15 +212,15 @@ describe('EnhancedMessageBus Integration Tests', () => {
         receivedMessages.push(message);
       };
 
-      const subscriptionId = messageBus.subscribe(MessageType.REQUEST, handler);
+      const subscriptionId = messageBus.subscribe(MessageType.TASK_REQUEST, handler);
 
-      await messageBus.publish(MessageType.REQUEST, { data: 'test1' });
+      await messageBus.publish(MessageType.TASK_REQUEST, { data: 'test1' });
 
       await new Promise(resolve => setTimeout(resolve, 100));
 
       messageBus.unsubscribe(subscriptionId);
 
-      await messageBus.publish(MessageType.REQUEST, { data: 'test2' });
+      await messageBus.publish(MessageType.TASK_REQUEST, { data: 'test2' });
 
       await new Promise(resolve => setTimeout(resolve, 100));
 
@@ -235,13 +235,13 @@ describe('EnhancedMessageBus Integration Tests', () => {
         throw new Error('Permanent failure');
       };
 
-      messageBus.subscribe(MessageType.REQUEST, handler);
+      messageBus.subscribe(MessageType.TASK_REQUEST, handler);
 
-      await messageBus.publish(MessageType.REQUEST, { data: 'test' });
+      await messageBus.publish(MessageType.TASK_REQUEST, { data: 'test' });
 
       await new Promise(resolve => setTimeout(resolve, 1000));
 
-      const deadLetterMessages = messageBus.getDeadLetterMessages();
+      const deadLetterMessages = messageBus.getDeadLetterQueue();
 
       expect(deadLetterMessages.length).toBeGreaterThan(0);
     });
@@ -255,12 +255,14 @@ describe('EnhancedMessageBus Integration Tests', () => {
         receivedMessages.push(message);
       };
 
-      messageBus.subscribe(MessageType.REQUEST, handler, {
-        filter: (message) => message.payload?.priority === 'high'
+      messageBus.subscribe(MessageType.TASK_REQUEST, handler, {
+        filter: {
+          customFilter: (message) => message.payload?.priority === 'high'
+        }
       });
 
-      await messageBus.publish(MessageType.REQUEST, { priority: 'high' });
-      await messageBus.publish(MessageType.REQUEST, { priority: 'low' });
+      await messageBus.publish(MessageType.TASK_REQUEST, { priority: 'high' });
+      await messageBus.publish(MessageType.TASK_REQUEST, { priority: 'low' });
 
       await new Promise(resolve => setTimeout(resolve, 100));
 
@@ -277,16 +279,16 @@ describe('EnhancedMessageBus Integration Tests', () => {
         receivedMessages.push(message);
       };
 
-      messageBus.subscribe(MessageType.REQUEST, handler);
+      messageBus.subscribe(MessageType.TASK_REQUEST, handler);
 
-      await messageBus.publish(MessageType.REQUEST, { data: 'test' }, {
+      await messageBus.publish(MessageType.TASK_REQUEST, { data: 'test' }, {
         ttl: 50
       });
 
       await new Promise(resolve => setTimeout(resolve, 200));
 
       const metrics = messageBus.getMetrics();
-      expect(metrics.expiredMessages).toBeGreaterThan(0);
+      expect(metrics.messagesExpired).toBeGreaterThan(0);
     });
   });
 
@@ -297,7 +299,7 @@ describe('EnhancedMessageBus Integration Tests', () => {
 
       const handler: MessageHandler = async (message) => {
         if (message.replyTo) {
-          await messageBus.publish(MessageType.RESPONSE, {
+          await messageBus.publish(MessageType.TASK_RESPONSE, {
             replyToMessage: message.id
           }, {
             correlationId: message.id
@@ -305,9 +307,9 @@ describe('EnhancedMessageBus Integration Tests', () => {
         }
       };
 
-      messageBus.subscribe(MessageType.REQUEST, handler);
+      messageBus.subscribe(MessageType.TASK_REQUEST, handler);
 
-      await messageBus.publish(MessageType.REQUEST, { data: 'test' }, {
+      await messageBus.publish(MessageType.TASK_REQUEST, { data: 'test' }, {
         correlationId,
         replyTo
       });

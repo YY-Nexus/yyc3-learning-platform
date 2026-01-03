@@ -12,10 +12,10 @@ import {
   Recommendation,
   Priority,
   AlertLevel
-} from '@/types/IFiveDimensionalManagement';
-import { Logger } from '@/utils/Logger';
-import { GoalAnalyticsEngine } from '@/core/GoalAnalyticsEngine';
-import { GoalValidator } from '@/utils/GoalValidator';
+} from '../types/IFiveDimensionalManagement';
+import { Logger } from '../utils/Logger';
+import { GoalAnalyticsEngine } from '../core/GoalAnalyticsEngine';
+import { GoalValidator } from '../utils/GoalValidator';
 
 /**
  * Goal Dimension - Manages strategic objectives, KPIs, and milestones

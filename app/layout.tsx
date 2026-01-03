@@ -8,7 +8,8 @@
  * @copyright Copyright (c) 2025 YYC³
  * @license MIT
  */
-import type { Metadata, ReactNode, Viewport } from "next";
+import type { Metadata, Viewport } from "next";
+import type { ReactNode } from "react";
 import { Inter } from "next/font/google";
 import "./globals.css";
 import { ThemeProvider } from "@/components/theme-provider";

@@ -42,7 +42,9 @@ const envSchema = z.object({
   BCRYPT_ROUNDS: z.string().regex(/^[0-9]+$/, "BCRYPT_ROUNDS 必须是数字").optional().default('10'),
   
   // 应用配置
-  NODE_ENV: z.enum(['development', 'production', 'test'], "NODE_ENV 必须是 development, production 或 test").optional().default('development'),
+  NODE_ENV: z.enum(['development', 'production', 'test'], {
+    errorMap: () => ({ message: "NODE_ENV 必须是 development, production 或 test" })
+  }).optional().default('development'),
   PORT: z.string().regex(/^[0-9]+$/, "PORT 必须是数字").default('3000'),
   
   // 可选：Redis 配置
@@ -51,7 +53,9 @@ const envSchema = z.object({
   REDIS_PASSWORD: z.string().optional(),
   
   // 可选：日志配置
-  LOG_LEVEL: z.enum(['debug', 'info', 'warn', 'error'], "LOG_LEVEL 必须是 debug, info, warn 或 error").optional(),
+  LOG_LEVEL: z.enum(['debug', 'info', 'warn', 'error'], {
+    errorMap: () => ({ message: "LOG_LEVEL 必须是 debug, info, warn 或 error" })
+  }).optional(),
   LOG_FILE_PATH: z.string().optional(),
   
   // 可选：监控配置

@@ -182,6 +182,16 @@ export class EnhancedMessageBus extends EventEmitter {
     this.startMetricsCollection();
   }
 
+  async start(): Promise<void> {
+    this.startTime = Date.now();
+    this.startProcessing();
+    this.startMetricsCollection();
+  }
+
+  async stop(): Promise<void> {
+    await this.shutdown();
+  }
+
   private initializeMetrics(): MessageBusMetrics {
     return {
       totalMessages: 0,
@@ -224,13 +234,22 @@ export class EnhancedMessageBus extends EventEmitter {
       priority: options.priority || MessagePriority.NORMAL,
       timestamp: Date.now(),
       sender: options.sender || 'system',
-      correlationId: options.correlationId,
-      replyTo: options.replyTo,
-      expireAt: options.ttl ? Date.now() + options.ttl : undefined,
       retryCount: 0,
       maxRetries: this.config.retryPolicy.maxRetries,
       metadata: options.metadata || {}
     };
+
+    if (options.correlationId !== undefined) {
+      message.correlationId = options.correlationId;
+    }
+
+    if (options.replyTo !== undefined) {
+      message.replyTo = options.replyTo;
+    }
+
+    if (options.ttl !== undefined) {
+      message.expireAt = Date.now() + options.ttl;
+    }
 
     if (this.config.enableTracing) {
       const traceId = message.metadata.traceId || this.generateTraceId();
@@ -271,10 +290,13 @@ export class EnhancedMessageBus extends EventEmitter {
       id: subscriptionId,
       type,
       handler,
-      filter: options?.filter,
       active: true,
       createdAt: Date.now()
     };
+
+    if (options?.filter !== undefined) {
+      subscription.filter = options.filter;
+    }
 
     if (!this.handlers.has(type)) {
       this.handlers.set(type, []);
@@ -339,20 +361,28 @@ export class EnhancedMessageBus extends EventEmitter {
       throw new Error('Original message does not have a replyTo field');
     }
 
+    const options: {
+      correlationId?: string;
+      metadata?: MessageMetadata;
+    } = {
+      metadata: originalMessage.metadata
+    };
+
+    if (originalMessage.correlationId !== undefined) {
+      options.correlationId = originalMessage.correlationId;
+    }
+
     await this.publish(
       originalMessage.replyTo as MessageType,
       payload,
-      {
-        correlationId: originalMessage.correlationId,
-        metadata: originalMessage.metadata
-      }
+      options
     );
   }
 
   private insertByPriority(message: MessageEnvelope): void {
     let index = 0;
     while (index < this.messageQueue.length && 
-           this.messageQueue[index].priority <= message.priority) {
+           this.messageQueue[index]!.priority <= message.priority) {
       index++;
     }
     this.messageQueue.splice(index, 0, message);
@@ -548,7 +578,7 @@ export class EnhancedMessageBus extends EventEmitter {
 
   private handleExpiredMessage(message: MessageEnvelope): void {
     this.metrics.messagesExpired++;
-    logger.warn(`[EnhancedMessageBus] Message ${message.id} expired`);
+    console.warn(`[EnhancedMessageBus] Message ${message.id} expired`);
 
     if (this.config.enableTracing) {
       this.updateTrace(message.id, 'expired');
@@ -598,12 +628,17 @@ export class EnhancedMessageBus extends EventEmitter {
     const trace = this.traces.get(messageId);
     if (!trace) return;
 
-    trace.events.push({
+    const traceEvent: TraceEvent = {
       timestamp: Date.now(),
       event,
-      handler,
       metadata: {}
-    });
+    };
+
+    if (handler !== undefined) {
+      traceEvent.handler = handler;
+    }
+
+    trace.events.push(traceEvent);
 
     if (event === 'completed' || event === 'failed' || event === 'expired') {
       trace.endTime = Date.now();
@@ -645,6 +680,8 @@ export class EnhancedMessageBus extends EventEmitter {
     if (index === -1) return false;
 
     const message = this.deadLetterQueue.splice(index, 1)[0];
+    if (!message) return false;
+
     message.retryCount = 0;
     delete message.metadata.error;
 

@@ -20,28 +20,56 @@ async function advancedFeaturesExample() {
     const apiKey = process.env.YYC3_API_KEY || 'your-api-key';
 
     const aiEngine = new AutonomousAIEngine({
-      apiKey,
-      model: 'gpt-4',
-      maxTokens: 4000,
-      temperature: 0.8
+      maxConcurrentTasks: 10,
+      resourceLimits: {
+        maxMemory: 1024 * 1024 * 1024,
+        maxCPU: 80,
+        maxNetwork: 1000
+      },
+      learningConfig: {
+        enabled: true,
+        adaptationRate: 0.1,
+        knowledgeRetention: 0.9
+      },
+      decisionMakingConfig: {
+        timeout: 30000,
+        confidenceThreshold: 0.7
+      },
+      collaborationConfig: {
+        enabled: true,
+        maxCollaborators: 5
+      },
+      monitoringConfig: {
+        enabled: true,
+        metricsInterval: 60000
+      },
+      securityConfig: {
+        level: 'standard',
+        accessControl: true,
+        encryptionEnabled: true,
+        auditLog: true
+      },
+      integrationConfig: {
+        enabled: true,
+        endpoints: []
+      },
+      modelAdapterConfig: {
+        apiKey,
+        model: 'gpt-4',
+        provider: 'openai'
+      }
     });
 
     console.log('✅ 自主AI引擎初始化成功');
 
-    const modelAdapter = new ModelAdapter({
-      provider: 'openai',
-      apiKey,
-      model: 'gpt-4',
-      streaming: true
-    });
+    const modelAdapter = new ModelAdapter();
 
     console.log('✅ 模型适配器初始化成功（流式模式）');
 
     const rateLimiter = new RateLimiter({
       maxRequests: 100,
-      windowMs: 60000,
-      strategy: RateLimitStrategy.TOKEN_BUCKET
-    });
+      windowMs: 60000
+    }, RateLimitStrategy.TOKEN_BUCKET);
 
     console.log('✅ 速率限制器初始化成功（令牌桶策略）');
 
@@ -76,7 +104,7 @@ async function advancedFeaturesExample() {
       });
     }
 
-    const streamResponse = await modelAdapter.generateStream({
+    const streamResponse = modelAdapter.generateStream({
       prompt: '请用三句话介绍人工智能的发展历程',
       maxTokens: 300
     });

@@ -1,5 +1,5 @@
-import { ManagementConfig, PerformanceMetrics, ReliabilityMetrics, MaintainabilityMetrics } from '@/types/IFiveDimensionalManagement';
-import { Logger } from '@/utils/Logger';
+import { ManagementConfig, PerformanceMetrics, ReliabilityMetrics, MaintainabilityMetrics } from '../types/IFiveDimensionalManagement';
+import { Logger } from '../utils/Logger';
 
 export class SystemMonitor {
   private config: ManagementConfig;
